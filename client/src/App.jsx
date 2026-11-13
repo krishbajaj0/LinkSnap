@@ -1,25 +1,36 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import './App.css';
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggle = useRef(null);
+
+  function handleNavigationKeyDown(event) {
+    if (event.key === 'Escape' && menuOpen && menuToggle.current.getClientRects().length > 0) {
+      setMenuOpen(false);
+      menuToggle.current.focus();
+    }
+  }
 
   return (
     <div className="app-shell">
       {/* ===== Navbar ===== */}
-      <nav className="navbar">
+      <nav className="navbar" aria-label="Main navigation" onKeyDown={handleNavigationKeyDown}>
         <h1 className="brand">🔗 LinkSnap</h1>
 
         <button
+          ref={menuToggle}
+          type="button"
           className="menu-toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => setMenuOpen((open) => !open)}
           aria-label="Toggle navigation menu"
+          aria-controls="main-navigation-links"
           aria-expanded={menuOpen}
         >
-          <span className={`hamburger ${menuOpen ? 'hamburger-open' : ''}`}></span>
+          <span className={`hamburger ${menuOpen ? 'hamburger-open' : ''}`} aria-hidden="true"></span>
         </button>
 
-        <div className={`nav-links ${menuOpen ? 'nav-open' : ''}`}>
+        <div id="main-navigation-links" className={`nav-links ${menuOpen ? 'nav-open' : ''}`}>
           <a
             href="#features"
             className="nav-link"
@@ -36,7 +47,7 @@ function App() {
             How It Works
           </a>
 
-          <button className="primary-btn">Get Started</button>
+          <button type="button" className="primary-btn" disabled>Get Started (coming soon)</button>
         </div>
       </nav>
 
@@ -54,11 +65,13 @@ function App() {
             and grow smarter with real-time analytics.
           </p>
 
-          <button className="primary-btn hero-button">Get Started Free</button>
+          <button type="button" className="primary-btn hero-button" disabled>
+            Get Started Free (coming soon)
+          </button>
         </section>
 
         {/* ===== Features Section ===== */}
-        <section id="features" className="features">
+        <section id="features" className="features" tabIndex={-1}>
           <h2 className="section-title">
             Everything You Need in One Place
           </h2>
@@ -107,7 +120,7 @@ function App() {
         </section>
 
         {/* ===== How It Works Section ===== */}
-        <section id="how-it-works" className="how-it-works">
+        <section id="how-it-works" className="how-it-works" tabIndex={-1}>
           <h2 className="section-title">How It Works</h2>
 
           <p className="section-description">
@@ -205,12 +218,12 @@ function App() {
           <h2 className="cta-title">Ready to Shorten Smarter?</h2>
 
           <p className="cta-description">
-            Join LinkSnap and start creating powerful short links
-            with advanced analytics — completely free.
+            Free signup is coming soon. Explore how LinkSnap will help you
+            shorten links and track clicks.
           </p>
 
-          <button className="primary-btn cta-button">
-            Get Started Free
+          <button type="button" className="primary-btn cta-button" disabled>
+            Get Started Free (coming soon)
           </button>
         </section>
       </main>
