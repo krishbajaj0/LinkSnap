@@ -42,7 +42,20 @@ Send a bearer access token to `/api/v1/links`. `POST` accepts a `destination`, o
 
 Public `GET /:shortCode` returns `302` with `Cache-Control: no-store` for active links. Unknown and unavailable codes share a generic `404`. Vite forwards canonical short-code paths to Express while keeping reserved application routes in React. In a future same-service deployment, serve API routes and the short-code router before the SPA fallback. Serve static assets and known SPA paths without sending them through the redirect lookup. Reserve new top-level application paths before exposing them.
 
-The lifetime counter starts at zero. Phase 7 can record events and update counters after the redirect decision, with bounded work and failures handled independently of the response. Link creation and redirects parse destination URLs locally and make no outbound destination requests.
+Link creation and redirects parse destination URLs locally and make no outbound destination requests.
+
+### Click analytics
+
+Authenticated endpoints under `/api/v1/analytics` are `GET /`, `GET /links/:id`, `GET /export.csv`, and `GET /links/:id/export.csv`. Dates `from` and `to` are inclusive UTC calendar days. Daily reports default to the last 30 days and cover at most the latest 90 UTC days. Hourly reports default to today and allow up to seven days. Set `traffic=all`, `human`, or `bot`. The selected-range report reads retained events. Lifetime counters include all traffic and dates, including deleted links in the overall total. Breakdowns return the top 12 categories, and the most-clicked table returns up to 10 links.
+
+Exports contain up to 5,000 matching events, newest first. The response sets `X-Analytics-Export-Truncated` when the limit is reached. CSV fields are quoted and spreadsheet formula prefixes are neutralized. No raw request headers, IPs, or visitor IDs appear in responses or exports.
+
+An eligible GET redirect responds before recording starts. HEAD and explicit prefetch requests are skipped. The recorder allows up to 64 concurrent jobs, with 1.5-second MongoDB operation budgets. It inserts an event, then increments the three lifetime counters as applicable using an atomic `$inc` that does not change the link's edit timestamp. If insertion fails, the counter is skipped. If the counter write fails after insertion, the event remains reportable and the lifetime count can lag. A replay with the same event ID is ignored. Separate client requests are separate click attempts. Saturation, process exit, and database failure can lose writes without affecting the redirect. Event TTL is 90 days and MongoDB removes expired documents asynchronously. Link counters have no TTL.
+
+- `ANALYTICS_VISITOR_SECRET` is an optional, separate 32-byte random hex key. Generate it in the same way as the auth secret and keep it in the ignored environment file. Without it, visitor estimates are disabled and click counts continue. The HMAC uses owner, IP, and coarse device/browser/OS categories under a key derived for the UTC day. Across days the same visitor may count again. Shared IPs and changing devices or networks affect estimates.
+- `ANALYTICS_GEOIP_PATH` optionally points to a locally provisioned MaxMind-compatible Country or City `.mmdb`. Lookups stay in-process. Missing files, missing country records and local/private IPs generally yield Unknown. Keep the database current and provision it separately from the repository.
+- `TRUSTED_PROXY_IPS` is optional and accepts exact IPs of controlled proxies. With it unset, Express uses the socket peer and ignores forwarded IP headers. Only configure proxies that replace or safely append forwarding information. Verify the ingress addresses and client-IP behavior before enabling this on Render. Local Vite proxy traffic may share one socket IP.
+- Referrers are reduced to registrable domains. Requests without a referrer are Direct. User-agent matching flags common crawlers, preview clients, headless clients and command-line tools. Spoofed or unfamiliar user agents can be misclassified, so non-bot counts are estimates.
 
 ### Dashboard and link management
 
@@ -92,4 +105,4 @@ curl.exe -i http://127.0.0.1:3000/api/v1/health/ready
 npm test --prefix server
 ```
 
-Foundation tests use an injected readiness check. Authentication tests use a randomly named database on local MongoDB at `127.0.0.1:27017` and clean up only that database. Set `LINKSNAP_TEST_MONGO_PORT` to use a different local port. Use `npm start --prefix server` to run without file watching.
+Foundation tests use an injected readiness check. Authentication, link, and analytics integration tests use randomly named databases on local MongoDB at `127.0.0.1:27017` and clean up only those databases. Set `LINKSNAP_TEST_MONGO_PORT` to use a different local port. Use `npm start --prefix server` to run without file watching.

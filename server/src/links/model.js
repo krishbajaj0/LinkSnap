@@ -13,6 +13,8 @@ const schema = new mongoose.Schema({
   securityBlocked: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
   lifetimeClicks: { type: Number, min: 0, default: 0 },
+  lifetimeHumanClicks: { type: Number, min: 0, default: 0 },
+  lifetimeBotClicks: { type: Number, min: 0, default: 0 },
   tags: { type: [String], default: [], validate: (tags) =>
     tags.length <= maxTags && new Set(tags).size === tags.length && tags.every(isTag) },
 }, { timestamps: true });

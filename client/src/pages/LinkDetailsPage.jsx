@@ -77,6 +77,7 @@ export default function LinkDetailsPage() {
         <>
           <div className="dashboard-panel">
             <h2>{link.shortCode}</h2>
+            <Link className="text-link" to={`/dashboard/analytics/links/${link.id}`}>View link analytics</Link>
             <p>Status <strong className="link-state">{link.status}</strong></p>
             <p>Destination {link.destination}</p>
             <p>Expiration {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : 'None'}</p>

@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 const developmentOrigins = 'http://localhost:5173,http://127.0.0.1:5173';
 
 export function readConfig(env = process.env) {
@@ -40,5 +42,15 @@ export function readConfig(env = process.env) {
     throw new Error('AUTH_SECRET and CLIENT_ORIGINS are required in production.');
   }
   const authSecret = rawSecret ? Buffer.from(rawSecret, 'hex') : undefined;
-  return { environment, host, port, mongoUri, clientOrigins, authSecret };
+  const rawVisitorSecret = env.ANALYTICS_VISITOR_SECRET?.trim();
+  if (rawVisitorSecret && (!/^[a-f0-9]{64}$/i.test(rawVisitorSecret) || rawVisitorSecret.toLowerCase() === rawSecret?.toLowerCase())) {
+    throw new Error('ANALYTICS_VISITOR_SECRET must be 32 random bytes in hex, distinct from AUTH_SECRET.');
+  }
+  const visitorSecret = rawVisitorSecret ? Buffer.from(rawVisitorSecret, 'hex') : undefined;
+  const geoIpPath = env.ANALYTICS_GEOIP_PATH?.trim();
+  const trustedProxyIps = (env.TRUSTED_PROXY_IPS ?? '').split(',').map((ip) => ip.trim()).filter(Boolean);
+  if (trustedProxyIps.some((ip) => !isIP(ip) || ip.includes('%') || /^::ffff:/i.test(ip))) {
+    throw new Error('TRUSTED_PROXY_IPS must contain exact IPv4 or IPv6 addresses.');
+  }
+  return { environment, host, port, mongoUri, clientOrigins, authSecret, visitorSecret, geoIpPath, trustedProxyIps };
 }

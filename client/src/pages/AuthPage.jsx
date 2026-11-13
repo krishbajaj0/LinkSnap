@@ -15,7 +15,7 @@ export default function AuthPage({ mode }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const requestedPath = location.state?.from;
-  const destination = /^\/dashboard(?:\/(?:links(?:\/[a-f0-9]{24})?|analytics|settings))?$/.test(requestedPath)
+  const destination = /^\/dashboard(?:\/(?:links(?:\/[a-f0-9]{24})?|analytics(?:\/links\/[a-f0-9]{24})?|settings))?$/.test(requestedPath)
     ? requestedPath
     : '/dashboard';
 

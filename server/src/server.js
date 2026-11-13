@@ -1,4 +1,5 @@
 import { once } from 'node:events';
+import { ClickEvent } from './analytics/model.js';
 import { createApp } from './app.js';
 import { Session, User } from './auth/models.js';
 import { readConfig } from './config/env.js';
@@ -10,7 +11,7 @@ async function start() {
   if (config.mongoUri) await connectMongo(config.mongoUri);
   if (config.mongoUri && config.authSecret) {
     try {
-      await Promise.all([User.init(), Session.init(), Link.init()]);
+      await Promise.all([User.init(), Session.init(), Link.init(), ClickEvent.init()]);
     } catch {
       throw new Error('Database initialization failed. Check database permissions and indexes.');
     }

@@ -83,8 +83,8 @@ export default function DashboardOverview() {
         </>
       )}
       <div className="dashboard-panel analytics-note">
-        <h2>Analytics coming soon</h2>
-        <p>Click trends and visitor insights will appear here when tracking is available.</p>
+        <h2>Click analytics</h2>
+        <Link className="text-link" to="/dashboard/analytics">View click trends and visitor insights</Link>
       </div>
     </section>
   );

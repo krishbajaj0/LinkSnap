@@ -5,7 +5,7 @@ import { isShortCode } from '../links/paths.js';
 import { linkStatus } from '../links/service.js';
 import { normalizeDestination } from '../links/validation.js';
 
-export function createRedirectRouter(config) {
+export function createRedirectRouter(config, recordClick) {
   const router = Router();
   router.get('/:shortCode', async (request, response, next) => {
     const { shortCode } = request.params;
@@ -16,7 +16,7 @@ export function createRedirectRouter(config) {
     const unavailable = new HttpError(404, 'SHORT_LINK_UNAVAILABLE', 'Short link is unavailable.');
     if (!config.mongoUri) throw unavailable;
     const link = await Link.findOne({ shortCode })
-      .select('destination enabled expiresAt deletedAt securityBlocked').lean();
+      .select('ownerId destination enabled expiresAt deletedAt securityBlocked').lean();
     if (!link || linkStatus(link) !== 'active') throw unavailable;
 
     let destination;
@@ -26,8 +26,14 @@ export function createRedirectRouter(config) {
       throw unavailable;
     }
 
-    // Phase 7 can record click events independently after the redirect decision.
+    // Capture the trusted peer before Node can detach the socket at response end.
+    const clientIp = request.method === 'GET' ? request.ip ?? '' : '';
     response.status(302).location(destination).end();
+    if (request.method === 'GET') {
+      setImmediate(() => {
+        void Promise.resolve().then(() => recordClick(request, link, clientIp)).catch(() => {});
+      });
+    }
   });
   return router;
 }
