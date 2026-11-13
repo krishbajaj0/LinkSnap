@@ -63,3 +63,23 @@ img {
 button {
   font-family: inherit;
 }
+
+:where(a, button):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.text-link {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.public-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+.public-layout > main {
+  flex: 1;
+}

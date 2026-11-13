@@ -1,0 +1,58 @@
+.public-panel {
+  width: min(calc(100% - 2rem), 30rem);
+  margin: clamp(2rem, 8vw, 5rem) auto;
+  padding: clamp(1.25rem, 5vw, 2.25rem);
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.public-panel h1 {
+  font-size: clamp(1.65rem, 5vw, 2.25rem);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.public-panel p {
+  color: var(--color-text-secondary);
+}
+
+.public-panel > .primary-btn {
+  margin-top: 1.5rem;
+}
+
+.public-panel .development-note {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.auth-panel fieldset {
+  display: grid;
+  min-width: 0;
+  border: 0;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.auth-panel label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.auth-panel input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page);
+  color: var(--color-text-dark);
+  font: inherit;
+}
+
+.auth-panel button {
+  width: 100%;
+}
