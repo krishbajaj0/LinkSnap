@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
-export default function ShortLink({ path }) {
+export default function ShortLink({ path, url = new URL(path, window.location.origin).href }) {
   const [message, setMessage] = useState('');
-  const url = new URL(path, window.location.origin).href;
 
   async function copy() {
     try {
@@ -15,7 +14,7 @@ export default function ShortLink({ path }) {
 
   return (
     <div className="short-link">
-      <a className="text-link" href={path} target="_blank" rel="noopener noreferrer">{url}</a>
+      <a className="text-link" href={url} target="_blank" rel="noopener noreferrer">{url}</a>
       <button className="primary-btn" type="button" onClick={copy}>Copy short URL</button>
       <span role="status">{message}</span>
     </div>

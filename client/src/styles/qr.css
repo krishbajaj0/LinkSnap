@@ -1,0 +1,79 @@
+.qr-page {
+  overflow-wrap: anywhere;
+}
+
+.qr-page .dashboard-panel {
+  min-width: 0;
+  max-width: none;
+}
+
+.qr-url {
+  margin-bottom: 1rem;
+}
+
+.qr-url p {
+  margin-top: 0.5rem;
+}
+
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+
+.qr-settings fieldset {
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.qr-settings label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+.qr-color {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.qr-settings input,
+.qr-settings select,
+.qr-settings input[type="text"] {
+  max-width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+
+.qr-settings input[type="text"] {
+  width: min(100%, 9rem);
+}
+
+.qr-settings input[type="color"] {
+  width: 3rem;
+  height: 2.75rem;
+}
+
+.qr-settings select {
+  width: min(100%, 12rem);
+  min-height: 44px;
+  padding: 0.5rem;
+  border: 1px solid #94a3b8;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-white);
+}
+
+.qr-settings :is(input, select):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.qr-image {
+  width: min(100%, 20rem);
+  height: auto;
+  margin: 1rem auto;
+  border: 1px solid var(--color-border);
+}

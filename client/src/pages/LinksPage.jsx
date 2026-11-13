@@ -131,6 +131,7 @@ export default function LinksPage() {
                       onChange={(event) => setSelected(event.target.checked
                         ? [...selected, link.id] : selected.filter((id) => id !== link.id))} />
                     <Link className="text-link" to={link.id}>{link.shortCode}</Link>
+                    <Link className="text-link" to={`${link.id}/qr`} aria-label={`QR Studio for ${link.shortCode}`}>QR Studio</Link>
                     <span className="link-state" data-status={link.status}>{link.status}</span>
                   </div>
                   <p>{link.destination}</p>

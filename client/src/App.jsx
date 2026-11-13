@@ -13,6 +13,7 @@ import NotFoundPage from './pages/NotFoundPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
+const QrStudioPage = lazy(() => import('./pages/QrStudioPage.jsx'));
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             <Route index element={<DashboardOverview />} />
             <Route path="links" element={<LinksPage />} />
             <Route path="links/:id" element={<LinkDetailsPage />} />
+            <Route path="links/:id/qr" element={<Suspense fallback={<p role="status">Loading QR Studio…</p>}><QrStudioPage /></Suspense>} />
             <Route path="analytics" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="analytics/links/:id" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="settings" element={<SettingsPage />} />
