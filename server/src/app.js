@@ -6,8 +6,10 @@ import { createAuthRouter } from './auth/routes.js';
 import { isMongoReady } from './database/mongo.js';
 import { createHealthRouter } from './health/routes.js';
 import { handleError, HttpError, notFound } from './http/errors.js';
+import { createLinksRouter } from './links/routes.js';
+import { createRedirectRouter } from './redirects/routes.js';
 
-export function createApp(config, { checkDatabase = isMongoReady } = {}) {
+export function createApp(config, { checkDatabase = isMongoReady, generateCode } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
@@ -29,6 +31,9 @@ export function createApp(config, { checkDatabase = isMongoReady } = {}) {
 
   app.use('/api/v1', createHealthRouter(checkDatabase));
   app.use('/api/v1/auth', createAuthRouter(config));
+  app.use('/api/v1/links', createLinksRouter(config, generateCode));
+  app.use('/api', notFound);
+  app.use(createRedirectRouter(config));
   app.use(notFound);
   app.use(handleError);
 

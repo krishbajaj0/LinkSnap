@@ -3,15 +3,16 @@ import { createApp } from './app.js';
 import { Session, User } from './auth/models.js';
 import { readConfig } from './config/env.js';
 import { connectMongo, disconnectMongo } from './database/mongo.js';
+import { Link } from './links/model.js';
 
 async function start() {
   const config = readConfig();
   if (config.mongoUri) await connectMongo(config.mongoUri);
   if (config.mongoUri && config.authSecret) {
     try {
-      await Promise.all([User.init(), Session.init()]);
+      await Promise.all([User.init(), Session.init(), Link.init()]);
     } catch {
-      throw new Error('Authentication database initialization failed. Check database permissions and indexes.');
+      throw new Error('Database initialization failed. Check database permissions and indexes.');
     }
   }
 

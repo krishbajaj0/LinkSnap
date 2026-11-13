@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { authRequest, withSessionLock } from '../services/auth.js';
+import { apiRequest, authRequest, withSessionLock } from '../services/auth.js';
 import { AuthContext } from './useAuth.js';
 
 export default function AuthProvider({ children }) {
@@ -48,18 +48,21 @@ export default function AuthProvider({ children }) {
     return () => { active = false; };
   }, [refresh]);
 
-  const authenticatedRequest = useCallback(async (path, options) => {
+  const authorizedApiRequest = useCallback(async (path, options) => {
     const token = access.current ?? await refresh();
     if (!token) throw new Error('Please sign in to continue.');
     try {
-      return await authRequest(path, { ...options, token });
+      return await apiRequest(path, { ...options, token });
     } catch (error) {
       if (error.code !== 'UNAUTHENTICATED') throw error;
       const renewed = access.current && access.current !== token ? access.current : await refresh();
       if (!renewed) throw error;
-      return authRequest(path, { ...options, token: renewed });
+      return apiRequest(path, { ...options, token: renewed });
     }
   }, [refresh]);
+
+  const authenticatedRequest = useCallback((path, options) =>
+    authorizedApiRequest(`/auth${path}`, options), [authorizedApiRequest]);
 
   function signIn(mode, body) {
     return withSessionLock(async () => {
@@ -80,7 +83,7 @@ export default function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, restore, signIn, logout, authenticatedRequest, endAllSessions }}>
+    <AuthContext.Provider value={{ ...state, restore, signIn, logout, authenticatedRequest, authorizedApiRequest, endAllSessions }}>
       {children}
     </AuthContext.Provider>
   );

@@ -36,6 +36,14 @@ The API limits requests under `/api` to 120 per IP per minute, including health 
 
 Vite forwards `/api` to `http://127.0.0.1:3000` during development. Set `LINKSNAP_API_TARGET` in your shell or the ignored client `.env` if the backend uses another address. The client uses relative API URLs, so a future same-origin deployment can serve React and the API together.
 
+## Short links
+
+Send a bearer access token to `/api/v1/links`. `POST` accepts a `destination`, optional `alias`, and optional future UTC ISO `expiresAt`. `GET` lists the current user's links with `page` (1–1000) and `limit` (1–50). `GET /:id` reads a link, `PATCH /:id` updates `destination`, `expiresAt` or `enabled`, and `DELETE /:id` soft-deletes it. Set `expiresAt` to null to remove expiration. The status is calculated from moderation, enabled state, and expiration. Aliases are immutable and remain reserved after deletion.
+
+Public `GET /:shortCode` returns `302` with `Cache-Control: no-store` for active links. Unknown and unavailable codes share a generic `404`. Vite forwards canonical short-code paths to Express while keeping reserved application routes in React. In a future same-service deployment, serve API routes and the short-code router before the SPA fallback. Serve static assets and known SPA paths without sending them through the redirect lookup. Reserve new top-level application paths before exposing them.
+
+The lifetime counter starts at zero. Phase 7 can record events and update counters after the redirect decision, with bounded work and failures handled independently of the response. Link creation and redirects parse destination URLs locally and make no outbound destination requests.
+
 ## Authentication
 
 Generate the local secret directly into your existing, ignored `server/.env`. Replace an existing blank `AUTH_SECRET=` line rather than adding a duplicate. This PowerShell example requires the template line and preserves the rest of the file.

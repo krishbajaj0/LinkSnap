@@ -15,7 +15,9 @@ export default function AuthPage({ mode }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const requestedPath = location.state?.from;
-  const destination = /^\/dashboard(?:\/(?:links|analytics|settings))?$/.test(requestedPath) ? requestedPath : '/dashboard';
+  const destination = /^\/dashboard(?:\/(?:links(?:\/[a-f0-9]{24})?|analytics|settings))?$/.test(requestedPath)
+    ? requestedPath
+    : '/dashboard';
 
   if (status === 'authenticated') return <Navigate replace to={destination} />;
   if (status === 'loading') return <p className="public-panel" role="status">Checking your session…</p>;

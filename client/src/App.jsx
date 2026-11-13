@@ -6,6 +6,8 @@ import PublicLayout from './layouts/PublicLayout.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
+import LinksPage from './pages/LinksPage.jsx';
+import LinkDetailsPage from './pages/LinkDetailsPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 
@@ -23,7 +25,8 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route path="dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardPage title="Dashboard Overview" description="Your link activity and performance summary will appear here." />} />
-            <Route path="links" element={<DashboardPage title="My Links" description="Create and manage your short links here when link management is available." />} />
+            <Route path="links" element={<LinksPage />} />
+            <Route path="links/:id" element={<LinkDetailsPage />} />
             <Route path="analytics" element={<DashboardPage title="Analytics" description="Click trends, devices, and referrers will appear here when tracking is available." />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
