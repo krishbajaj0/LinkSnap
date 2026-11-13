@@ -44,6 +44,14 @@ Public `GET /:shortCode` returns `302` with `Cache-Control: no-store` for active
 
 The lifetime counter starts at zero. Phase 7 can record events and update counters after the redirect decision, with bounded work and failures handled independently of the response. Link creation and redirects parse destination URLs locally and make no outbound destination requests.
 
+### Dashboard and link management
+
+- `GET /api/v1/links/overview` returns owner-scoped counts and the five newest and five most recently updated links. Recent counts cover the last seven days. Soft-deleted rows are excluded. Status precedence is deleted, security-blocked, disabled, expired, then active, matching public redirects.
+- List queries accept `search` (literal case-insensitive substring of code, destination, or tag, up to 100 characters), `status` (`active`, `disabled`, `expired`, `security-blocked`), exact `tag`, inclusive UTC dates `createdFrom` and `createdTo` in `YYYY-MM-DD`, and `sort` (`newest`, `oldest`, `updated`, `expiration`, `code`). Expiration sorting puts latest deadlines first and unset deadlines last. Counts and paging apply to the filtered results.
+- Create and edit accept `tags` as an array of up to 10 strings. Tags are trimmed, lowercased, deduplicated, and limited to 32 characters each. `PATCH` replaces the supplied tag list.
+- `POST /api/v1/links/bulk` takes `{ action, ids, tag? }` with 1–50 IDs and one of `enable`, `disable`, `delete`, `add-tag`, or `remove-tag`. It returns `requested`, `changed`, and `skipped` for the deduplicated IDs. Each write is conditional and atomic per link. Missing, foreign, deleted, already-matching, and otherwise ineligible rows contribute to the same skipped count. Bulk enable skips security-blocked links, and adding a tag to a full list is skipped. A batch is not an all-or-nothing transaction.
+- Compound indexes start with owner and deletion state, then cover the list's date/code sorts and exact tag filtering. Substring search still scans candidate rows for that owner because a case-insensitive substring expression cannot use an index for the match itself. Consider a dedicated search index for large collections.
+
 ## Authentication
 
 Generate the local secret directly into your existing, ignored `server/.env`. Replace an existing blank `AUTH_SECRET=` line rather than adding a duplicate. This PowerShell example requires the template line and preserves the rest of the file.

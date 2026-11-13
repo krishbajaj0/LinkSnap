@@ -191,4 +191,80 @@ test('short links with real auth and an isolated MongoDB database', async (t) =>
     assert.equal((await request('/api/v1/health')).status, 200);
     assert.equal((await request('/api')).body.error.code, 'NOT_FOUND');
   });
+
+  await t.test('overview, searchable tags, date filters, sorting and safe bulk actions', async () => {
+    const north = await create({ alias: 'north-2026', destination: 'https://example.test/campaign?place=north', tags: ['  Launch   Week ', 'launch week', 'Sales'] });
+    const south = await create({ alias: 'south-2026', destination: 'https://example.test/campaign?place=south', tags: ['Sales'] });
+    const foreign = await create({ alias: 'foreign-2026', destination, tags: ['Sales'] }, stranger);
+    assert.equal(north.status, 201);
+    assert.deepEqual(north.body.data.tags, ['launch week', 'sales']);
+    const northId = north.body.data.id;
+    const southId = south.body.data.id;
+    const foreignId = foreign.body.data.id;
+    await Link.updateOne({ _id: southId }, { expiresAt: new Date(Date.now() - 1000) });
+    await edit(primary.id, { enabled: false });
+    await Link.updateOne({ shortCode: 'RetryA01' }, { securityBlocked: true, enabled: false });
+    const blockedId = String((await Link.findOne({ shortCode: 'RetryA01' }))._id);
+
+    const overview = async () => (await request(links + '/overview', { token: owner })).body.data;
+    const before = await overview();
+    assert.deepEqual(before.counts, {
+      total: 6, active: 3, disabled: 1, expired: 1, 'security-blocked': 1, recentlyCreated: 6, recentlyUpdated: 6,
+    });
+    assert.equal(before.newest.length, 5);
+    assert.ok(before.newest.every((link) => link.id !== foreignId));
+    assert.ok(before.updated.every((link) => link.id !== foreignId));
+    assert.equal((await request(links + '/overview')).status, 401);
+
+    const list = async (query) => (await request(links + '?' + query, { token: owner })).body.data;
+    assert.deepEqual((await list('search=NORTH-2026')).links.map((link) => link.id), [northId]);
+    assert.deepEqual((await list('search=place%3Dsouth')).links.map((link) => link.id), [southId]);
+    assert.equal((await list('search=LAUNCH')).total, 1);
+    assert.equal((await list('search=.*')).total, 0);
+    assert.equal((await list('search=none')).hasLinks, true);
+    assert.deepEqual((await list('status=expired')).links.map((link) => link.id), [southId]);
+    assert.deepEqual((await list('status=disabled')).links.map((link) => link.id), [primary.id]);
+    assert.equal((await list('status=active')).total, 3);
+    assert.equal((await list('tag=SALES&sort=code')).total, 2);
+    assert.deepEqual((await list('tag=sales&sort=code')).links.map((link) => link.id), [northId, southId]);
+    assert.equal((await list('sort=oldest&limit=1')).links[0].id, primary.id);
+    assert.equal((await list('sort=expiration')).links[0].id, southId);
+    assert.equal((await list('page=1000&limit=50')).links.length, 0);
+    assert.equal((await list('createdFrom=2000-01-01&createdTo=2000-01-01')).total, 0);
+    const today = new Date().toISOString().slice(0, 10);
+    assert.equal((await list('createdFrom=' + today + '&createdTo=' + today)).total, 6);
+    for (const query of ['sort=constructor', 'status=deleted', 'createdTo=2026-02-30', 'page=1001', 'limit=51', 'search=a&search=b', 'foo=bar']) {
+      assert.equal((await request(links + '?' + query, { token: owner })).status, 400, query);
+    }
+    assert.equal((await edit(northId, { tags: ['invalid!'] })).status, 400);
+
+    const bulk = (action, ids, tag) => request(links + '/bulk', {
+      method: 'POST', token: owner, body: { action, ids, ...(tag && { tag }) },
+    });
+    assert.equal((await request(links + '/bulk', { method: 'POST', body: { action: 'delete', ids: [northId] } })).status, 401);
+    assert.equal((await bulk('delete', ['bad'])).status, 400);
+    assert.equal((await bulk('delete', Array(51).fill(northId))).status, 400);
+    const mixed = await bulk('disable', [northId, foreignId, northId]);
+    assert.deepEqual(mixed.body.data, { requested: 2, changed: 1, skipped: 1 });
+    assert.equal((await request('/north-2026')).status, 404);
+    assert.equal((await request('/foreign-2026')).status, 302);
+    assert.deepEqual((await bulk('enable', [northId, blockedId])).body.data, { requested: 2, changed: 1, skipped: 1 });
+    assert.equal((await request('/north-2026')).status, 302);
+    assert.equal((await request('/RetryA01')).status, 404);
+    assert.deepEqual((await bulk('add-tag', [northId, southId], '  NEW Tag  ')).body.data, { requested: 2, changed: 2, skipped: 0 });
+    assert.equal((await bulk('add-tag', [northId, southId], 'new tag')).body.data.changed, 0);
+    assert.equal((await bulk('remove-tag', [northId, southId], 'SALES')).body.data.changed, 2);
+    assert.deepEqual((await details(northId)).body.data.tags, ['launch week', 'new tag']);
+
+    await edit(northId, { tags: Array.from({ length: 9 }, (_, index) => 'tag-' + index) });
+    const concurrent = await Promise.all([bulk('add-tag', [northId], 'first'), bulk('add-tag', [northId], 'second')]);
+    assert.equal(concurrent.reduce((sum, result) => sum + result.body.data.changed, 0), 1);
+    assert.equal((await details(northId)).body.data.tags.length, 10);
+
+    assert.deepEqual((await bulk('delete', [southId, foreignId])).body.data, { requested: 2, changed: 1, skipped: 1 });
+    assert.equal((await details(southId)).status, 404);
+    assert.equal((await create({ alias: 'south-2026', destination })).status, 409);
+    assert.equal((await request('/foreign-2026')).status, 302);
+    assert.equal((await overview()).counts.total, 5);
+  });
 });

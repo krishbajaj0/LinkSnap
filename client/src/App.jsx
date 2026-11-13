@@ -5,6 +5,7 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import PublicLayout from './layouts/PublicLayout.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import DashboardOverview from './pages/DashboardOverview.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LinksPage from './pages/LinksPage.jsx';
 import LinkDetailsPage from './pages/LinkDetailsPage.jsx';
@@ -24,7 +25,7 @@ export default function App() {
         </Route>
         <Route element={<RequireAuth />}>
           <Route path="dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardPage title="Dashboard Overview" description="Your link activity and performance summary will appear here." />} />
+            <Route index element={<DashboardOverview />} />
             <Route path="links" element={<LinksPage />} />
             <Route path="links/:id" element={<LinkDetailsPage />} />
             <Route path="analytics" element={<DashboardPage title="Analytics" description="Click trends, devices, and referrers will appear here when tracking is available." />} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import LinkFields from '../components/links/LinkFields.jsx';
+import LinkTags from '../components/links/LinkTags.jsx';
 import ShortLink from '../components/links/ShortLink.jsx';
 import '../styles/links.css';
 
@@ -81,7 +82,7 @@ export default function LinkDetailsPage() {
             <p>Expiration {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : 'None'}</p>
             <ShortLink path={link.shortPath} />
             <div className="link-actions">
-              <button className="primary-btn" type="button" disabled={pending}
+              <button className="primary-btn" type="button" disabled={pending || (!link.enabled && link.status === 'security-blocked')}
                 onClick={() => void run(() => update({ enabled: !link.enabled }, link.enabled ? 'Link disabled.' : 'Link enabled.'))}>
                 {link.enabled ? 'Disable link' : 'Enable link'}
               </button>
@@ -96,6 +97,14 @@ export default function LinkDetailsPage() {
               </div>
             )}
           </div>
+          <LinkTags tags={link.tags} pending={pending} onSave={async (tags) => {
+            let saved = false;
+            await run(async () => {
+              await update({ tags }, 'Tags updated.');
+              saved = true;
+            });
+            return saved;
+          }} />
           <div className="dashboard-panel">
             <h2>Edit link</h2>
             <LinkFields key={`${link.id}:${link.destination}:${link.expiresAt}`} link={link} pending={pending} onSave={update} />

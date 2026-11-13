@@ -40,7 +40,7 @@ function DashboardShell() {
         <aside id="dashboard-sidebar" className="dashboard-sidebar" data-open={menuOpen}>
           <nav aria-label="Dashboard navigation">
             {links.map(({ to, label }) => (
-              <NavLink key={to} to={to} end onClick={() => setMenuOpen(false)}>
+              <NavLink key={to} to={to} end={to !== '/dashboard/links'} onClick={() => setMenuOpen(false)}>
                 {label}
               </NavLink>
             ))}

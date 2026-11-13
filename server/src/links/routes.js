@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { requireUser } from '../auth/middleware.js';
 import { createTokens } from '../auth/tokens.js';
 import { HttpError } from '../http/errors.js';
+import { bulkUpdateLinks, dashboardOverview, linkSorts, listLinks, statusFilters } from './management.js';
 import { Link } from './model.js';
 import { createLink, serializeLink } from './service.js';
-import { readLinkInput, readPagination, validateLinkId } from './validation.js';
+import { readBulkInput, readLinkInput, readLinkQuery, validateLinkId } from './validation.js';
 
 const missing = () => new HttpError(404, 'LINK_NOT_FOUND', 'Link not found.');
 const owned = (request) => ({ ownerId: request.user._id, deletedAt: null });
@@ -28,13 +29,16 @@ export function createLinksRouter(config, generateCode) {
   });
 
   router.get('/', async (request, response) => {
-    const { page, limit } = readPagination(request.query);
-    const filter = owned(request);
-    const [links, total] = await Promise.all([
-      Link.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).lean(),
-      Link.countDocuments(filter),
-    ]);
-    response.json({ success: true, data: { links: links.map(serializeLink), page, limit, total } });
+    const query = readLinkQuery(request.query, linkSorts, statusFilters(new Date()));
+    response.json({ success: true, data: await listLinks(owned(request), query) });
+  });
+
+  router.get('/overview', async (request, response) => {
+    response.json({ success: true, data: await dashboardOverview(owned(request)) });
+  });
+
+  router.post('/bulk', async (request, response) => {
+    response.json({ success: true, data: await bulkUpdateLinks(owned(request), readBulkInput(request.body)) });
   });
 
   router.param('id', (request, _response, next, id) => {

@@ -13,11 +13,11 @@ export function linkStatus(link, now = new Date()) {
   return 'active';
 }
 
-export function serializeLink(link) {
-  const { _id, destination, shortCode, codeType, expiresAt, enabled, createdAt, updatedAt } = link;
+export function serializeLink(link, now) {
+  const { _id, destination, shortCode, codeType, expiresAt, enabled, createdAt, updatedAt, tags = [] } = link;
   return {
     id: String(_id), destination, shortCode, shortPath: `/${shortCode}`,
-    codeType, expiresAt, enabled, status: linkStatus(link), createdAt, updatedAt,
+    codeType, expiresAt, enabled, status: linkStatus(link, now), createdAt, updatedAt, tags,
   };
 }
 
