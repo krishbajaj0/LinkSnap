@@ -1,11 +1,19 @@
 import { once } from 'node:events';
 import { createApp } from './app.js';
+import { Session, User } from './auth/models.js';
 import { readConfig } from './config/env.js';
 import { connectMongo, disconnectMongo } from './database/mongo.js';
 
 async function start() {
   const config = readConfig();
   if (config.mongoUri) await connectMongo(config.mongoUri);
+  if (config.mongoUri && config.authSecret) {
+    try {
+      await Promise.all([User.init(), Session.init()]);
+    } catch {
+      throw new Error('Authentication database initialization failed. Check database permissions and indexes.');
+    }
+  }
 
   const server = createApp(config).listen(config.port, config.host);
   try {
@@ -15,6 +23,7 @@ async function start() {
   }
   console.info(`LinkSnap API listening on ${config.host}:${config.port}.`);
   if (!config.mongoUri) console.info('MongoDB is unconfigured. Only liveness is available.');
+  if (config.mongoUri && !config.authSecret) console.info('AUTH_SECRET is unconfigured. Authentication is unavailable.');
 
   async function shutdown() {
     const deadline = setTimeout(() => process.exit(1), 10_000);

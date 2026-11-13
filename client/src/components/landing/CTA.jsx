@@ -6,7 +6,7 @@ export default function CTA() {
       <h2 className="cta-title">Ready to Shorten Smarter?</h2>
 
       <p className="cta-description">
-        See the registration preview. Free signup will open when authentication is available.
+        Create your free LinkSnap account.
       </p>
 
       <Link className="primary-btn cta-button" to="/register">Get Started Free</Link>

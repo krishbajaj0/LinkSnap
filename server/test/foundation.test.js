@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -24,10 +25,10 @@ test('environment validation keeps local defaults and requires MongoDB in produc
   assert.throws(() => readConfig({ NODE_ENV: 'staging' }), /NODE_ENV/);
   assert.throws(() => readConfig({ MONGODB_URI: 'https://example.test' }), /MongoDB connection string/);
   assert.throws(() => readConfig({ CLIENT_ORIGINS: 'https://example.test/path' }), /CLIENT_ORIGINS/);
-  assert.equal(readConfig({
+  assert.throws(() => readConfig({
     NODE_ENV: 'production',
     MONGODB_URI: 'mongodb://127.0.0.1:27017/linksnap',
-  }).clientOrigins.size, 0);
+  }), /AUTH_SECRET and CLIENT_ORIGINS/);
 });
 
 test('HTTP foundation handles health, CORS, and JSON errors', async (t) => {
@@ -125,6 +126,8 @@ test('MongoDB startup failure keeps connection details out of process output', a
       env: {
         ...process.env,
         NODE_ENV: 'production',
+        AUTH_SECRET: randomBytes(32).toString('hex'),
+        CLIENT_ORIGINS: 'https://linksnap.example',
         MONGODB_URI: `mongodb://test-user:${syntheticPassword}@127.0.0.1:1/linksnap`,
       },
     }),

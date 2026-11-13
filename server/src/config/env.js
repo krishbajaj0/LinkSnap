@@ -32,5 +32,13 @@ export function readConfig(env = process.env) {
   }
 
   const host = env.HOST?.trim() || (environment === 'production' ? '0.0.0.0' : '127.0.0.1');
-  return { environment, host, port, mongoUri, clientOrigins };
+  const rawSecret = env.AUTH_SECRET?.trim();
+  if (rawSecret && !/^[a-f0-9]{64}$/i.test(rawSecret)) {
+    throw new Error('AUTH_SECRET must contain 32 random bytes encoded as 64 hex characters.');
+  }
+  if (environment === 'production' && (!rawSecret || !clientOrigins.size)) {
+    throw new Error('AUTH_SECRET and CLIENT_ORIGINS are required in production.');
+  }
+  const authSecret = rawSecret ? Buffer.from(rawSecret, 'hex') : undefined;
+  return { environment, host, port, mongoUri, clientOrigins, authSecret };
 }
