@@ -14,6 +14,9 @@ const paths = {
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   copy: 'M8 8h12v12H8zM16 4H4v12',
   external: 'M13 4h7v7m0-7-9 9m7 1v6H4V6h6',
+  qr: 'M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h3v3h3v3m-6-1h.01 M12 3v2m0 5v4m-9-2h4m13-1v2',
+  alert: 'M12 3 2 21h20L12 3z M12 9v5m0 3h.01',
+  signout: 'M10 17l5-5-5-5m5 5H3m10-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6',
 };
 
 export default function Icon({ name, size = 18 }) {

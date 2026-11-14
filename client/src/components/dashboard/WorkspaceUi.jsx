@@ -19,6 +19,15 @@ export function MetricCard({ label, value, hint, icon, featured }) {
   );
 }
 
+export function CardHeading({ id, title, icon, children }) {
+  return (
+    <div className="workspace-card-heading">
+      {icon && <span className="workspace-icon"><Icon name={icon} /></span>}
+      <div><h2 id={id}>{title}</h2>{children && <p className="workspace-panel-caption">{children}</p>}</div>
+    </div>
+  );
+}
+
 export function StatusBadge({ status }) {
   const label = status[0].toUpperCase() + status.slice(1).replaceAll('-', ' ');
   return <span className="link-state workspace-status" data-status={status}>{label}</span>;
