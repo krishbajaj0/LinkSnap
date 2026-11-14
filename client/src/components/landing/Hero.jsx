@@ -2,19 +2,15 @@ import { Link } from 'react-router';
 
 export default function Hero() {
   return (
-    <section className="hero">
-      <span className="hero-badge">SMART LINK MANAGEMENT</span>
-
-      <h1 className="hero-title">
-        Shorten Links.<br />Track Results.
-      </h1>
-
-      <p className="hero-description">
-        Create powerful short links, track every click,
-        and grow smarter with real-time analytics.
-      </p>
-
-      <Link className="primary-btn hero-button" to="/register">Get Started Free</Link>
+    <section className="landing-hero public-container" aria-labelledby="landing-title">
+      <h1 id="landing-title">Short links.<br /><span>Clear insights.</span></h1>
+      <p>Create memorable short links, see how people find them, and share them anywhere with custom QR codes.</p>
+      <div className="landing-actions">
+        <Link className="primary-btn public-button" to="/register">Get started <span aria-hidden="true">→</span></Link>
+        <Link className="public-button public-button-outline" to="/#product-preview">
+          See the dashboard <span aria-hidden="true">↓</span>
+        </Link>
+      </div>
     </section>
   );
 }

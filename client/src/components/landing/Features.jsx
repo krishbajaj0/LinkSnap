@@ -1,52 +1,28 @@
+const features = [
+  ['link', 'Short links, your way', 'Create a custom alias or let LinkSnap generate a short code for you.'],
+  ['analytics', 'Click analytics', 'See traffic trends and learn which devices and referrers bring people to your links.'],
+  ['qr', 'Custom QR codes', 'Adjust the colors, add a logo, and export your code as PNG or SVG.'],
+  ['manage', 'Link management', 'Organize links with tags, set expirations, and make changes in bulk.'],
+  ['shield', 'Link safety', 'Preview a destination hostname before opening it and report suspicious links.'],
+  ['redirect', 'Reliable redirects', 'Route visitors to the right destination while your link is active.'],
+];
 
 export default function Features() {
   return (
-    <section id="features" className="features" tabIndex={-1}>
-      <h2 className="section-title">
-        Everything You Need in One Place
-      </h2>
-
-      <p className="section-description">
-        Powerful tools to manage, track, and share your links.
-      </p>
-
-      <div className="features-grid">
-        <div className="feature-card">
-          <span className="feature-icon">🔗</span>
-          <h3>Smart URL Shortening</h3>
-          <p>Create short, memorable links with custom aliases and auto-generated codes.</p>
-        </div>
-
-        <div className="feature-card">
-          <span className="feature-icon">📊</span>
-          <h3>Advanced Analytics</h3>
-          <p>Track clicks, devices, browsers, locations, and referrers in real time.</p>
-        </div>
-
-        <div className="feature-card">
-          <span className="feature-icon">▦</span>
-          <h3>Custom QR Codes</h3>
-          <p>Generate QR codes with custom colors, logos, and export as PNG or SVG.</p>
-        </div>
-
-        <div className="feature-card">
-          <span className="feature-icon">📁</span>
-          <h3>Link Management</h3>
-          <p>Organize with tags, set expirations, enable or disable links, and bulk actions.</p>
-        </div>
-
-        <div className="feature-card">
-          <span className="feature-icon">🛡️</span>
-          <h3>Security &amp; Privacy</h3>
-          <p>URL safety checks, suspicious link detection, and privacy-focused tracking.</p>
-        </div>
-
-        <div className="feature-card">
-          <span className="feature-icon">⚡</span>
-          <h3>Fast Redirects</h3>
-          <p>Lightning-fast redirects with link validation and expiration handling.</p>
-        </div>
-      </div>
+    <section id="features" className="landing-section public-container" tabIndex={-1} aria-labelledby="features-title">
+      <header className="landing-section-heading">
+        <h2 id="features-title">More than a shorter URL.</h2>
+        <p>Manage your links, measure traffic, and share from one workspace.</p>
+      </header>
+      <ul className="feature-grid">
+        {features.map(([icon, title, detail]) => (
+          <li className="public-feature-card" key={icon}>
+            <span className={`product-icon icon-${icon}`} aria-hidden="true" />
+            <h3>{title}</h3>
+            <p>{detail}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -7,10 +7,12 @@ import HowItWorks from '../components/landing/HowItWorks.jsx';
 export default function LandingPage() {
   return (
     <>
-      <Hero />
+      <div className="landing-opening">
+        <Hero />
+        <DashboardPreview />
+      </div>
       <Features />
       <HowItWorks />
-      <DashboardPreview />
       <CTA />
     </>
   );
