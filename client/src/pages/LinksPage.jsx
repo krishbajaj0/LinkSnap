@@ -5,6 +5,10 @@ import LinkFields from '../components/links/LinkFields.jsx';
 import LinkFilters from '../components/links/LinkFilters.jsx';
 import BulkActions from '../components/links/BulkActions.jsx';
 import ShortLink from '../components/links/ShortLink.jsx';
+import LinksTable from '../components/links/LinksTable.jsx';
+import Icon from '../components/dashboard/Icon.jsx';
+import { EmptyState, LoadingState, PageHeader } from '../components/dashboard/WorkspaceUi.jsx';
+import { publicShortUrl } from '../services/shortUrl.js';
 import '../styles/links.css';
 
 const defaultFilters = {
@@ -23,6 +27,7 @@ export default function LinksPage() {
   const [revision, setRevision] = useState(0);
   const [list, setList] = useState(null);
   const [error, setError] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(null);
   const [formVersion, setFormVersion] = useState(0);
@@ -52,6 +57,16 @@ export default function LinksPage() {
     setBulkMessage('');
     setBulkError('');
     load(1);
+  }
+
+  async function copy(path) {
+    setCopyStatus('');
+    try {
+      await navigator.clipboard.writeText(publicShortUrl(path));
+      setCopyStatus('Short URL copied.');
+    } catch {
+      setCopyStatus('Clipboard unavailable. Open the short URL or copy it from Link details.');
+    }
   }
 
   async function applyBulk(action, tag) {
@@ -86,74 +101,59 @@ export default function LinksPage() {
   }
 
   return (
-    <section className="links-page" aria-labelledby="links-title">
-      <header className="workspace-heading">
-        <div><h1 id="links-title">My Links</h1><p>Search, organize and manage your short links.</p></div>
-        <Link className="primary-btn" to="#create-link">Create link</Link>
-      </header>
-      <div id="create-link" tabIndex={-1} className="dashboard-panel">
-        <h2>Create a short link</h2>
-        <LinkFields key={formVersion} pending={creating || bulkPending} onSave={create} />
-        {created && (
-          <div className="link-created">
-            <p className="form-success" role="status">Short link created.</p>
-            <ShortLink key={created.id} path={created.shortPath} />
-          </div>
-        )}
-      </div>
-      <div className="dashboard-panel link-results">
-        <h2>Your links</h2>
+    <section className="links-page workspace-links" aria-labelledby="links-title">
+      <PageHeader id="links-title" title="My Links" description="Create, organize, and manage your short links.">
+        <Link className="primary-btn workspace-button" to="#create-link"><Icon name="plus" /> Create link</Link>
+      </PageHeader>
+      <section className="dashboard-panel workspace-card link-results" aria-labelledby="links-table-title">
+        <div className="workspace-table-heading">
+          <h2 id="links-table-title">Your links</h2>
+          {list && <p>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}</p>}
+        </div>
         <LinkFilters key={filterVersion} filters={filters} defaults={defaultFilters} onApply={applyFilters} disabled={bulkPending} />
         {bulkMessage && <p className="bulk-result" role="status">{bulkMessage}</p>}
+        {copyStatus && <p className="bulk-result" role="status">{copyStatus}</p>}
         {bulkError && <p className="form-error" role="alert">{bulkError}</p>}
-        {error && (
-          <>
-            <p className="form-error" role="alert">{error}</p>
-            <button className="primary-btn" type="button" onClick={() => load(page)}>Try again</button>
-          </>
-        )}
-        {!list && !error && <p role="status">Loading links…</p>}
+        {error && <div className="workspace-error">
+          <p role="alert">{error}</p>
+          <button className="secondary-btn" type="button" onClick={() => load(page)}>Try again</button>
+        </div>}
+        {!list && !error && <LoadingState>Loading links…</LoadingState>}
         {list && (
           <>
-            {list.links.length === 0 && <p className="state-note">{list.total ? 'No links on this page.' : list.hasLinks ? 'No links match these filters.' : 'No links yet. Create one above.'}</p>}
-            {list.links.length > 0 && (
-              <label className="link-checkbox">
-                <input type="checkbox" disabled={bulkPending} checked={selected.length === list.links.length}
-                  onChange={(event) => setSelected(event.target.checked ? list.links.map((link) => link.id) : [])} />
-                Select all links on this page
-              </label>
+            {list.links.length === 0 && (
+              <EmptyState title={list.total ? 'No links on this page' : list.hasLinks ? 'No matching links' : 'No short links yet'}>
+                {list.hasLinks && !list.total ? <p>Change your search or filters to see more links.</p> :
+                  !list.total && <Link className="text-link" to="#create-link">Create your first link</Link>}
+              </EmptyState>
             )}
             {selected.length > 0 && <BulkActions count={selected.length} pending={bulkPending}
               onClear={() => setSelected([])} onApply={applyBulk} />}
-            <ul className="link-list">
-              {list.links.map((link) => (
-                <li key={link.id}>
-                  <div className="link-row-heading">
-                    <input type="checkbox" aria-label={`Select ${link.shortCode}`} disabled={bulkPending} checked={selected.includes(link.id)}
-                      onChange={(event) => setSelected(event.target.checked
-                        ? [...selected, link.id] : selected.filter((id) => id !== link.id))} />
-                    <Link className="text-link" to={link.id}>{link.shortCode}</Link>
-                    <Link className="text-link" to={`${link.id}/qr`} aria-label={`QR Studio for ${link.shortCode}`}>QR Studio</Link>
-                    <span className="link-state" data-status={link.status}>{link.status}</span>
-                  </div>
-                  <p>{link.destination}</p>
-                  {link.tags.length > 0 && <ul className="tag-list" aria-label="Tags">
-                    {link.tags.map((tag) => <li className="tag-pill" key={tag}>{tag}</li>)}
-                  </ul>}
-                  <ShortLink path={link.shortPath} />
-                </li>
-              ))}
-            </ul>
+            {list.links.length > 0 && <LinksTable rows={list.links} selected={selected} disabled={bulkPending}
+              onSelect={(id, checked) => setSelected((current) => checked ? [...current, id] : current.filter((item) => item !== id))}
+              onSelectAll={(checked) => setSelected(checked ? list.links.map((link) => link.id) : [])} onCopy={copy} />}
             {(list.total > list.limit || page > 1) && (
-              <nav className="link-actions" aria-label="Link pages">
-                <button className="primary-btn" type="button" disabled={bulkPending || page === 1} onClick={() => load(page - 1)}>Previous</button>
-                <span>Page {page}</span>
-                <button className="primary-btn" type="button" disabled={bulkPending || page * list.limit >= list.total || page >= 1000} onClick={() => load(page + 1)}>Next</button>
+              <nav className="workspace-pagination" aria-label="Link pages">
+                <span>Page {page} of {Math.max(page, Math.min(1000, Math.ceil(list.total / list.limit)))}</span>
+                <div>
+                  <button className="secondary-btn" type="button" disabled={bulkPending || page === 1} onClick={() => load(page - 1)}>Previous</button>
+                  <button className="secondary-btn" type="button" disabled={bulkPending || page * list.limit >= list.total || page >= 1000}
+                    onClick={() => load(page + 1)}>Next</button>
+                </div>
               </nav>
             )}
           </>
         )}
-      </div>
+      </section>
+      <section id="create-link" tabIndex={-1} className="dashboard-panel workspace-card workspace-create" aria-labelledby="create-link-title">
+        <h2 id="create-link-title">Create a short link</h2>
+        <p>Add a destination and choose an alias or expiration if you need one.</p>
+        <LinkFields key={formVersion} pending={creating || bulkPending} onSave={create} />
+        {created && <div className="link-created">
+          <p className="form-success" role="status">Short link created.</p>
+          <ShortLink key={created.id} path={created.shortPath} />
+        </div>}
+      </section>
     </section>
   );
 }
