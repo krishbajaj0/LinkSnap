@@ -3,7 +3,7 @@ import { HttpError } from '../http/errors.js';
 import { Link } from '../links/model.js';
 import { isShortCode } from '../links/paths.js';
 import { linkStatus } from '../links/service.js';
-import { normalizeDestination } from '../links/validation.js';
+import { assessDestination } from '../security/url-safety.js';
 
 export function createRedirectRouter(config, recordClick) {
   const router = Router();
@@ -16,12 +16,14 @@ export function createRedirectRouter(config, recordClick) {
     const unavailable = new HttpError(404, 'SHORT_LINK_UNAVAILABLE', 'Short link is unavailable.');
     if (!config.mongoUri) throw unavailable;
     const link = await Link.findOne({ shortCode })
-      .select('ownerId destination enabled expiresAt deletedAt securityBlocked').lean();
+      .select('ownerId destination enabled expiresAt deletedAt securityBlocked').read('primary').lean();
     if (!link || linkStatus(link) !== 'active') throw unavailable;
 
     let destination;
     try {
-      destination = normalizeDestination(link.destination);
+      const assessment = assessDestination(link.destination, config.prohibitedDomains);
+      if (assessment.classification === 'blocked') throw unavailable();
+      destination = assessment.destination;
     } catch {
       throw unavailable;
     }

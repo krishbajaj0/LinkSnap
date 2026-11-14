@@ -1,4 +1,5 @@
 import { isIP } from 'node:net';
+import { readProhibitedDomains } from '../security/url-safety.js';
 
 const developmentOrigins = 'http://localhost:5173,http://127.0.0.1:5173';
 
@@ -52,5 +53,6 @@ export function readConfig(env = process.env) {
   if (trustedProxyIps.some((ip) => !isIP(ip) || ip.includes('%') || /^::ffff:/i.test(ip))) {
     throw new Error('TRUSTED_PROXY_IPS must contain exact IPv4 or IPv6 addresses.');
   }
-  return { environment, host, port, mongoUri, clientOrigins, authSecret, visitorSecret, geoIpPath, trustedProxyIps };
+  const prohibitedDomains = readProhibitedDomains(env.PROHIBITED_LINK_DOMAINS);
+  return { environment, host, port, mongoUri, clientOrigins, authSecret, visitorSecret, geoIpPath, trustedProxyIps, prohibitedDomains };
 }

@@ -79,7 +79,9 @@ export default function LinkDetailsPage() {
             <h2>{link.shortCode}</h2>
             <Link className="text-link" to={`/dashboard/analytics/links/${link.id}`}>View link analytics</Link>
             <div><Link className="text-link" to="qr">Open QR Studio</Link></div>
+            <div><Link className="text-link" to={`/preview/${link.shortCode}`}>Open destination preview</Link></div>
             <p>Status <strong className="link-state">{link.status}</strong></p>
+            {link.needsReview && <p>This address has patterns that warrant extra caution.</p>}
             <p>Destination {link.destination}</p>
             <p>Expiration {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : 'None'}</p>
             <ShortLink path={link.shortPath} />

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { useAuth } from '../auth/useAuth.js';
 import '../styles/dashboard.css';
 
 const links = [
@@ -10,6 +11,7 @@ const links = [
 ];
 
 function DashboardShell() {
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuToggle = useRef(null);
 
@@ -44,6 +46,7 @@ function DashboardShell() {
                 {label}
               </NavLink>
             ))}
+            {user?.role === 'admin' && <NavLink to="/dashboard/moderation" end onClick={() => setMenuOpen(false)}>Moderation</NavLink>}
           </nav>
         </aside>
       </div>

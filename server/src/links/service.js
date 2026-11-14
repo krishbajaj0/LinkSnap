@@ -18,6 +18,7 @@ export function serializeLink(link, now) {
   return {
     id: String(_id), destination, shortCode, shortPath: `/${shortCode}`,
     codeType, expiresAt, enabled, status: linkStatus(link, now), createdAt, updatedAt, tags,
+    needsReview: Boolean(link.securityFlags?.length),
   };
 }
 

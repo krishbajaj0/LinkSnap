@@ -170,7 +170,8 @@ test('short links with real auth and an isolated MongoDB database', async (t) =>
     assert.equal((await publicLink()).status, 302);
 
     await Link.updateOne({ _id: id }, { securityBlocked: true });
-    assert.equal((await edit(id, { enabled: true, expiresAt: null })).body.data.status, 'security-blocked');
+    assert.equal((await edit(id, { enabled: true, expiresAt: null })).status, 409);
+    assert.equal((await edit(id, { expiresAt: null })).body.data.status, 'security-blocked');
     assert.deepEqual((await publicLink()).body, expired.body);
     assert.equal((await remove(id)).status, 200);
     assert.equal((await details(id)).status, 404);

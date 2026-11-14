@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireUser } from '../auth/middleware.js';
 import { createTokens } from '../auth/tokens.js';
 import { HttpError } from '../http/errors.js';
+import { checkSubmission } from '../security/url-safety.js';
 import { bulkUpdateLinks, dashboardOverview, linkSorts, listLinks, statusFilters } from './management.js';
 import { Link } from './model.js';
 import { createLink, serializeLink } from './service.js';
@@ -24,7 +25,9 @@ export function createLinksRouter(config, generateCode) {
   router.use(requireUser(createTokens(config.authSecret)));
 
   router.post('/', async (request, response) => {
-    const link = await createLink(request.user._id, readLinkInput(request.body, true), generateCode);
+    const fields = readLinkInput(request.body, true);
+    Object.assign(fields, checkSubmission(fields.destination, config.prohibitedDomains));
+    const link = await createLink(request.user._id, fields, generateCode);
     response.status(201).json({ success: true, data: serializeLink(link) });
   });
 
@@ -55,10 +58,19 @@ export function createLinksRouter(config, generateCode) {
 
   router.patch('/:id', async (request, response) => {
     const fields = readLinkInput(request.body, false);
-    const link = await Link.findOneAndUpdate(request.linkFilter, { $set: fields }, {
+    if (fields.destination !== undefined) {
+      Object.assign(fields, checkSubmission(fields.destination, config.prohibitedDomains), { securityReviewedAt: null });
+    }
+    const filter = fields.enabled === true ? { ...request.linkFilter, securityBlocked: false } : request.linkFilter;
+    const link = await Link.findOneAndUpdate(filter, { $set: fields }, {
       returnDocument: 'after', runValidators: true,
     }).lean();
-    if (!link) throw missing();
+    if (!link) {
+      if (fields.enabled === true && await Link.exists({ ...request.linkFilter, securityBlocked: true })) {
+        throw new HttpError(409, 'LINK_SECURITY_BLOCKED', 'Only a moderator can unblock this link.');
+      }
+      throw missing();
+    }
     response.json({ success: true, data: serializeLink(link) });
   });
 

@@ -106,3 +106,21 @@ npm test --prefix server
 ```
 
 Foundation tests use an injected readiness check. Authentication, link, and analytics integration tests use randomly named databases on local MongoDB at `127.0.0.1:27017` and clean up only those databases. Set `LINKSNAP_TEST_MONGO_PORT` to use a different local port. Use `npm start --prefix server` to run without file watching.
+
+## Safety and abuse moderation
+
+- `GET /api/v1/preview/:code` returns the hostname, protocol, caution flag and a relative short-link path for an eligible link. Continue goes through the canonical redirect handler, which checks current state again. Preview neither contacts the destination nor records a click.
+- `POST /api/v1/reports` accepts JSON with `shortCode`, `reason` (`phishing`, `malware`, `spam`, `impersonation`, `other`), and optional `description` (500 characters). The body limit is 4 KB and the process-local limit is five submissions per IP in 15 minutes. A honeypot and a unique daily link/reason/reporter digest suppress duplicates. The digest uses the server's existing auth secret with a distinct purpose prefix. Without that secret, deduplication is shared per link/reason/day. No raw reporter IP is persisted. Normal, duplicate, honeypot and unknown-code submissions return the same acknowledgment.
+- `GET /api/v1/admin/reports` and `GET /api/v1/admin/links` list the queues. Their `/:id` endpoints expose details and accept `PATCH` decisions. Every admin endpoint checks the current user role on the server. Writes also require the configured origin and CSRF header. State changes and their append-only audit entries are atomic within the affected report or link. A report's status is a separate decision from a link block, so a moderator can mark the related report actioned after applying the block.
+- `PROHIBITED_LINK_DOMAINS` is an optional comma-separated operator-maintained list. Entries apply to the exact hostname and its subdomains, including existing links at redirect time. IP literals, internationalized labels, many subdomains, misleading subdomain words and recognizable forwarding URLs are review signals. These heuristics can flag legitimate sites or miss harmful ones. The server makes no destination requests, verifies no remote reputation, and cannot see what a destination serves or where it forwards. The existing bot classifier remains an analytics estimate and does not block navigation.
+- A moderator block survives owner edits and bulk actions. Redirects read the current link record from the primary, enforce lifecycle and URL policy, and only then schedule analytics. A request that already passed the checks may finish while a moderator is applying a block.
+
+### Bootstrap the first admin
+
+Register a normal account for the intended operator and independently verify its identity. Use an authenticated database administration session against the correct environment. Locate the exact account by its normalized email, verify the result, and use its unique ID in the following `mongosh` command. Keep database credentials in the normal secure connection workflow.
+
+```javascript
+db.users.updateOne({ _id: ObjectId("<verified-user-id>"), role: "user" }, { $set: { role: "admin" } })
+```
+
+Require exactly one matched and modified record. Have that operator sign out and back in to refresh the dashboard navigation. Record the grant in the environment's administrative access log. Public signup cannot grant the admin role.

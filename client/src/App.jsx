@@ -6,14 +6,17 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import PublicLayout from './layouts/PublicLayout.jsx';
 import AuthPage from './pages/AuthPage.jsx';
 import DashboardOverview from './pages/DashboardOverview.jsx';
+import DestinationPreviewPage from './pages/DestinationPreviewPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LinksPage from './pages/LinksPage.jsx';
 import LinkDetailsPage from './pages/LinkDetailsPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
+import ReportLinkPage from './pages/ReportLinkPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
 const QrStudioPage = lazy(() => import('./pages/QrStudioPage.jsx'));
+const ModerationPage = lazy(() => import('./pages/ModerationPage.jsx'));
 
 export default function App() {
   return (
@@ -24,6 +27,8 @@ export default function App() {
           <Route index element={<LandingPage />} />
           <Route path="register" element={<AuthPage key="register" mode="register" />} />
           <Route path="login" element={<AuthPage key="login" mode="login" />} />
+          <Route path="preview/:code" element={<DestinationPreviewPage />} />
+          <Route path="report/:code?" element={<ReportLinkPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route element={<RequireAuth />}>
@@ -35,6 +40,7 @@ export default function App() {
             <Route path="analytics" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="analytics/links/:id" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="moderation" element={<Suspense fallback={<p role="status">Loading moderation…</p>}><ModerationPage /></Suspense>} />
           </Route>
         </Route>
       </Routes>

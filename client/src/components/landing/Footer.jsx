@@ -14,6 +14,7 @@ export default function Footer() {
             <h4>Product</h4>
             <Link to="/#features">Features</Link>
             <Link to="/#how-it-works">How It Works</Link>
+            <Link to="/report">Report a short link</Link>
           </div>
 
           <div className="footer-column">
