@@ -59,6 +59,7 @@
 }
 
 .dashboard-main {
+  min-width: 0;
   padding: clamp(1.25rem, 4vw, 3rem);
 }
 
@@ -128,6 +129,50 @@
 .kpi-card dd {
   font-size: 2rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-group {
+  margin-bottom: 1.5rem;
+}
+
+.overview-group h2 {
+  margin-bottom: 0.65rem;
+  font-size: 1.125rem;
+}
+
+.primary-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0.75rem;
+}
+
+.primary-metrics .kpi-card:first-child {
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.primary-metrics .kpi-card dd {
+  font-size: clamp(1.65rem, 4vw, 2.65rem);
+}
+
+.summary-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.summary-metrics > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.summary-metrics dt {
+  color: var(--color-text-secondary);
+}
+
+.summary-metrics dd {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .dashboard-overview .dashboard-panel {
@@ -146,6 +191,8 @@
 .recent-links td {
   padding: 0.65rem 0.35rem;
   border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+  vertical-align: top;
 }
 
 .recent-links .link-state {

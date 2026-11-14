@@ -45,8 +45,10 @@
 
 .auth-panel input {
   width: 100%;
+  min-width: 0;
+  min-height: 44px;
   padding: 0.65rem 0.75rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-field-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-page);
   color: var(--color-text-dark);
@@ -62,10 +64,12 @@
   align-items: center;
   gap: 0.6rem;
   font-weight: 400;
+  min-height: 44px;
 }
 
 .auth-panel .password-toggle input {
-  width: auto;
+  width: 1.15rem;
+  min-height: 1.15rem;
   accent-color: var(--color-primary);
 }
 
@@ -83,14 +87,26 @@
   margin-top: 1rem;
 }
 
-.settings-page .dashboard-panel {
-  margin-bottom: 1rem;
-  overflow-wrap: anywhere;
+.field-hint {
+  font-size: 0.9rem;
 }
 
-.session-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
+:is(.form-success, .state-note) {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+:is(.public-panel, .dashboard-panel, .safety-card) .form-success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.auth-panel :is(.form-success, .form-error) + fieldset {
+  margin-top: 0.75rem;
+}
+
+:is(.public-panel, .dashboard-panel) .form-error {
+  color: #991b1b;
 }

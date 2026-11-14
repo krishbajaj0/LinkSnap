@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import ConfirmDialog from '../ConfirmDialog.jsx';
 
 export default function BulkActions({ count, pending, onClear, onApply }) {
   const [action, setAction] = useState('disable');
@@ -7,13 +8,9 @@ export default function BulkActions({ count, pending, onClear, onApply }) {
   const trigger = useRef(null);
   const usesTag = action === 'add-tag' || action === 'remove-tag';
 
-  useEffect(() => {
-    const modal = dialog.current;
-    return () => { if (modal?.open) modal.close(); };
-  }, []);
-
   function submit(event) {
     event.preventDefault();
+    if (pending) return;
     if (action === 'delete') dialog.current.showModal();
     else void onApply(action, usesTag ? tag : undefined);
   }
@@ -32,18 +29,10 @@ export default function BulkActions({ count, pending, onClear, onApply }) {
           <button className="secondary-btn" type="button" onClick={onClear}>Clear selection</button>
         </fieldset>
       </form>
-      <dialog ref={dialog} className="delete-dialog" aria-labelledby="bulk-delete-title" aria-describedby="bulk-delete-description"
-        onClose={() => trigger.current?.focus()}>
-        <h2 id="bulk-delete-title">Delete {count} selected {count === 1 ? 'link' : 'links'}?</h2>
-        <p id="bulk-delete-description">Deleted links stop redirecting and their aliases stay reserved.</p>
-        <div className="link-actions">
-          <button className="secondary-btn" type="button" autoFocus onClick={() => dialog.current.close()}>Cancel</button>
-          <button className="primary-btn link-delete" type="button" onClick={() => {
-            dialog.current.close();
-            void onApply('delete');
-          }}>Confirm bulk deletion</button>
-        </div>
-      </dialog>
+      <ConfirmDialog dialogRef={dialog} title={`Delete ${count} selected ${count === 1 ? 'link' : 'links'}?`}
+        description="Deleted links stop redirecting and their aliases stay reserved."
+        confirmLabel="Confirm bulk deletion" danger onClose={() => trigger.current?.focus()}
+        onConfirm={() => void onApply('delete')} />
     </div>
   );
 }

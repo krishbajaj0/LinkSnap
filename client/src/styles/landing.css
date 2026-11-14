@@ -34,13 +34,17 @@
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--color-text-secondary);
   font-size: 15px;
   font-weight: 500;
   transition: color var(--transition-fast);
 }
 
-.nav-link:hover {
+.nav-link:hover,
+.nav-link[aria-current="location"] {
   color: var(--color-primary);
 }
 
@@ -64,6 +68,10 @@
   cursor: pointer;
   transition: background-color var(--transition-fast),
     transform var(--transition-fast);
+}
+
+.public-layout :is(a, button, input, select, textarea, summary, #main-content) {
+  scroll-margin-top: 6rem;
 }
 
 .primary-btn:not(:disabled):hover {

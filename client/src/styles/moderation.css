@@ -1,10 +1,5 @@
-.safety-card {
+.public-panel.safety-card {
   width: min(40rem, calc(100% - 2rem));
-  margin: 2rem auto;
-  padding: clamp(1rem, 5vw, 2rem);
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
   overflow-wrap: anywhere;
 }
 
@@ -41,7 +36,11 @@
 
 .safety-warning {
   padding: 0.75rem;
+  border-radius: var(--radius-sm);
   background: #fef3c7;
+}
+
+.safety-card .safety-warning {
   color: #854d0e;
 }
 
@@ -75,7 +74,7 @@
   font: inherit;
   color: var(--color-text-dark);
   background: var(--color-bg-white);
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--color-field-border);
   border-radius: var(--radius-sm);
 }
 

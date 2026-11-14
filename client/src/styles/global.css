@@ -10,6 +10,7 @@
   --color-bg-page: #F8FAFC;
   --color-bg-white: #FFFFFF;
   --color-border: #E2E8F0;
+  --color-field-border: #8493A8;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -64,7 +65,7 @@ button {
   font-family: inherit;
 }
 
-:where(a, button):focus-visible {
+:where(a, button, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 4px;
 }
@@ -73,6 +74,79 @@ button {
   color: var(--color-primary-hover);
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+.primary-btn,
+.secondary-btn {
+  min-height: 44px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.secondary-btn {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-white);
+  color: var(--color-primary-hover);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-btn:not(:disabled):hover {
+  background: var(--color-primary-light);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 110;
+  transform: translateY(calc(-100% - 1rem));
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.confirm-dialog {
+  width: min(28rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  margin: auto;
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-text-dark);
+}
+
+.confirm-dialog::backdrop {
+  background: rgb(15 23 42 / 55%);
+}
+
+.confirm-dialog h2 {
+  margin-bottom: 0.4rem;
+  font-size: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0s;
+    --transition-normal: 0s;
+  }
 }
 
 .public-layout {

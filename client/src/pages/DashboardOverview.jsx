@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 
-const metrics = [
-  ['total', 'Total links'], ['active', 'Active'], ['disabled', 'Disabled'], ['expired', 'Expired'],
-  ['security-blocked', 'Security blocked'], ['recentlyCreated', 'Created in the last 7 days'],
-  ['recentlyUpdated', 'Updated in the last 7 days'],
-];
-
 function KpiCard({ label, value }) {
-  return <div className="kpi-card"><dt>{label}</dt><dd>{value}</dd></div>;
+  return <div className="kpi-card"><dt>{label}</dt><dd>{value.toLocaleString()}</dd></div>;
 }
 
 function RecentLinks({ title, rows, dateField }) {
@@ -66,9 +60,25 @@ export default function DashboardOverview() {
       {!data && !error && <p role="status">Loading dashboard…</p>}
       {data && (
         <>
-          <dl className="kpi-grid">
-            {metrics.map(([key, label]) => <KpiCard key={key} label={label} value={data.counts[key]} />)}
-          </dl>
+          <section className="overview-group" aria-labelledby="link-totals">
+            <h2 id="link-totals">Link totals</h2>
+            <dl className="kpi-grid primary-metrics">
+              <KpiCard label="Total links" value={data.counts.total} />
+              <KpiCard label="Active links" value={data.counts.active} />
+            </dl>
+            <dl className="summary-metrics">
+              <div><dt>Disabled</dt><dd>{data.counts.disabled.toLocaleString()}</dd></div>
+              <div><dt>Expired</dt><dd>{data.counts.expired.toLocaleString()}</dd></div>
+              <div><dt>Security blocked</dt><dd>{data.counts['security-blocked'].toLocaleString()}</dd></div>
+            </dl>
+          </section>
+          <section className="dashboard-panel overview-group" aria-labelledby="recent-activity">
+            <h2 id="recent-activity">Last 7 days</h2>
+            <dl className="summary-metrics">
+              <div><dt>Links created</dt><dd>{data.counts.recentlyCreated.toLocaleString()}</dd></div>
+              <div><dt>Links updated</dt><dd>{data.counts.recentlyUpdated.toLocaleString()}</dd></div>
+            </dl>
+          </section>
           {data.counts.total === 0 ? (
             <div className="dashboard-panel">
               <h2>Create your first short link</h2>

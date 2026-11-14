@@ -15,6 +15,7 @@ export default function LinkFields({ link, pending, onSave }) {
 
   async function submit(event) {
     event.preventDefault();
+    if (pending) return;
     setError('');
     if (!/^https?:\/\//i.test(destination.trim())) {
       setError('Enter a URL starting with http:// or https://.');
@@ -42,7 +43,7 @@ export default function LinkFields({ link, pending, onSave }) {
       {error && <p className="form-error" role="alert">{error}</p>}
       <fieldset disabled={pending}>
         <label>
-          Destination URL
+          Destination URL (required)
           <input required type="url" maxLength={2048} placeholder="https://example.com/article" value={destination}
             onChange={(event) => setDestination(event.target.value)} />
         </label>

@@ -55,6 +55,7 @@ export default function LinksPage() {
   }
 
   async function applyBulk(action, tag) {
+    if (bulkPending) return;
     setBulkPending(true);
     setBulkMessage('');
     setBulkError('');
@@ -72,6 +73,7 @@ export default function LinksPage() {
   }
 
   async function create(fields) {
+    if (creating) return;
     setCreating(true);
     try {
       const link = await authorizedApiRequest('/links', { method: 'POST', body: fields });
@@ -94,7 +96,7 @@ export default function LinksPage() {
         <LinkFields key={formVersion} pending={creating || bulkPending} onSave={create} />
         {created && (
           <div className="link-created">
-            <p role="status">Short link created.</p>
+            <p className="form-success" role="status">Short link created.</p>
             <ShortLink key={created.id} path={created.shortPath} />
           </div>
         )}
@@ -113,7 +115,7 @@ export default function LinksPage() {
         {!list && !error && <p role="status">Loading links…</p>}
         {list && (
           <>
-            {list.links.length === 0 && <p>{list.total ? 'No links on this page.' : list.hasLinks ? 'No links match these filters.' : 'No links yet. Create one above.'}</p>}
+            {list.links.length === 0 && <p className="state-note">{list.total ? 'No links on this page.' : list.hasLinks ? 'No links match these filters.' : 'No links yet. Create one above.'}</p>}
             {list.links.length > 0 && (
               <label className="link-checkbox">
                 <input type="checkbox" disabled={bulkPending} checked={selected.length === list.links.length}

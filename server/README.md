@@ -86,6 +86,7 @@ Remove-Variable secret
 | `POST /logout` | Revoke the current cookie's session. |
 | `POST /logout-all` | Revoke all sessions for the authenticated user. |
 | `GET /me` | Return the authenticated user's public profile. |
+| `PATCH /me` | Update the current user's name (trimmed, 1–80 characters). Requires an access token and trusted write headers. |
 | `PATCH /change-password` | Verify the current password, update it, and revoke all sessions. |
 
 - Access JWTs last 15 minutes and live in React memory. Protected APIs check both the session record and the user's session version. Refresh tokens are random, authenticated, and stored as hashes. The session expires seven days after creation, regardless of rotations.

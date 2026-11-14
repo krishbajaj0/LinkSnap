@@ -20,6 +20,7 @@ function ReportForm({ code }) {
 
   async function submit(event) {
     event.preventDefault();
+    if (pending || sent) return;
     const body = Object.fromEntries(new FormData(event.currentTarget));
     body.shortCode = body.shortCode.trim();
     setPending(true);
@@ -35,16 +36,16 @@ function ReportForm({ code }) {
   }
 
   return (
-    <section className="safety-card" aria-labelledby="report-heading">
+    <section className="public-panel safety-card" aria-labelledby="report-heading">
       <h1 id="report-heading">Report a short link</h1>
       <p>Share what looks suspicious. Please leave out passwords and personal details.</p>
-      {sent ? <p role="status">{sent}</p> : (
+      {sent ? <p className="form-success" role="status">{sent}</p> : (
         <form className="moderation-form" onSubmit={submit} aria-busy={pending}>
           {error && <p className="form-error" role="alert">{error}</p>}
           <fieldset disabled={pending}>
-            <label>Short code<input name="shortCode" required minLength={4} maxLength={32}
+            <label>Short code (required)<input name="shortCode" required minLength={4} maxLength={32}
               defaultValue={code} autoCapitalize="none" spellCheck={false} /></label>
-            <label>Reason<select name="reason" required defaultValue="">
+            <label>Reason (required)<select name="reason" required defaultValue="">
               <option value="" disabled>Choose a reason</option>
               {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select></label>

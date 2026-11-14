@@ -137,7 +137,7 @@ export default function QrStudio({ link }) {
             <button type="button" className="primary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('png')}>Download PNG</button>
             <button type="button" className="primary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('svg')}>Download SVG</button>
           </div>
-          <p role="status">{reading ? 'Reading logo…' : exporting ? `Preparing ${exporting.toUpperCase()}…` : notice}</p>
+          <p className={notice ? 'form-success' : undefined} role="status">{reading ? 'Reading logo…' : exporting ? `Preparing ${exporting.toUpperCase()}…` : notice}</p>
           {error && <p className="form-error" role="alert">{error}</p>}
         </section>
       </div>

@@ -11,6 +11,7 @@ export default function DestinationPreviewPage() {
 function Preview({ code }) {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -19,13 +20,17 @@ function Preview({ code }) {
         ? 'This short link is unavailable.' : 'Could not load the destination preview.');
     });
     return () => controller.abort();
-  }, [code]);
+  }, [code, attempt]);
 
   return (
-    <section className="safety-card" aria-labelledby="preview-heading">
+    <section className="public-panel safety-card" aria-labelledby="preview-heading">
       <h1 id="preview-heading">Destination preview</h1>
       {!preview && !error && <p role="status">Checking this short link…</p>}
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+      {error && error !== 'This short link is unavailable.' && <button className="secondary-btn" type="button" onClick={() => {
+        setError('');
+        setAttempt((value) => value + 1);
+      }}>Retry preview</button>}
       {preview && <>
         <p>You’re about to leave LinkSnap for an external website.</p>
         <dl><dt>Destination hostname</dt><dd className="safety-host">{preview.hostname}</dd>

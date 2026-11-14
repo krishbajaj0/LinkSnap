@@ -56,13 +56,8 @@ function AnalyticsReport({ id }) {
     return () => request.abort();
   }, [authorizedApiRequest, endpoint, query, revision]);
 
-  function load(event) {
-    event.preventDefault();
-    const fields = new URLSearchParams();
-    for (const [key, value] of new FormData(event.currentTarget)) {
-      if (value) fields.set(key, value);
-    }
-    setQuery(fields.toString());
+  function load(nextQuery) {
+    setQuery(nextQuery);
     setError('');
     setExportStatus('');
     setExportError('');
@@ -70,7 +65,17 @@ function AnalyticsReport({ id }) {
     setRevision((value) => value + 1);
   }
 
+  function applyFilters(event) {
+    event.preventDefault();
+    const fields = new URLSearchParams();
+    for (const [key, value] of new FormData(event.currentTarget)) {
+      if (value) fields.set(key, value);
+    }
+    load(fields.toString());
+  }
+
   async function download() {
+    if (!report || exporting) return;
     setExporting(true);
     setExportStatus('');
     setExportError('');
@@ -104,7 +109,7 @@ function AnalyticsReport({ id }) {
         <button type="button" className="primary-btn" disabled={!report || exporting}
           onClick={() => void download()}>{exporting ? 'Preparing CSV…' : 'Export CSV'}</button>
       </header>
-      <form className="dashboard-panel analytics-filters" onSubmit={load} aria-label="Analytics filters">
+      <form className="dashboard-panel analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters">
         <fieldset disabled={exporting}>
           <label>From (UTC)<input type="date" name="from" /></label>
           <label>Through (UTC)<input type="date" name="to" /></label>
@@ -114,10 +119,13 @@ function AnalyticsReport({ id }) {
         </fieldset>
         <p>Daily reports default to 30 days. Hourly reports default to today and support up to 7 days.</p>
       </form>
-      {exportStatus && <p role="status">{exportStatus}</p>}
+      {exportStatus && <p className="form-success" role="status">{exportStatus}</p>}
       {exportError && <p className="form-error" role="alert">{exportError}</p>}
-      {error && <p className="form-error" role="alert">{error}</p>}
-      {!report && !error && <p role="status">Loading analytics…</p>}
+      {error && <div className="dashboard-panel">
+        <p className="form-error" role="alert">{error}</p>
+        <button className="secondary-btn" type="button" onClick={() => load(query)}>Retry analytics</button>
+      </div>}
+      {!report && !error && <p className="state-note" role="status">Loading analytics…</p>}
       {report && (
         <>
           <h2 className="analytics-section-title">Selected period</h2>

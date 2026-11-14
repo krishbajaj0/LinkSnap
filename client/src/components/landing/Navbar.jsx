@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 export default function Navbar() {
+  const { pathname, hash } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuToggle = useRef(null);
 
@@ -31,6 +32,7 @@ export default function Navbar() {
         <Link
           to="/#features"
           className="nav-link"
+          aria-current={pathname === '/' && hash === '#features' ? 'location' : undefined}
           onClick={() => setMenuOpen(false)}
         >
           Features
@@ -39,6 +41,7 @@ export default function Navbar() {
         <Link
           to="/#how-it-works"
           className="nav-link"
+          aria-current={pathname === '/' && hash === '#how-it-works' ? 'location' : undefined}
           onClick={() => setMenuOpen(false)}
         >
           How It Works

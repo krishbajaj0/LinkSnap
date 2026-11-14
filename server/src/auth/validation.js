@@ -5,13 +5,18 @@ function invalid(message) {
   return new HttpError(400, 'VALIDATION_ERROR', message);
 }
 
+export function readProfileName(value) {
+  const name = typeof value === 'string' ? value.trim() : '';
+  if (!name || name.length > 80) throw invalid('Enter a name up to 80 characters.');
+  return name;
+}
+
 export function readCredentials(body, registering = false) {
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
-  const name = typeof body?.name === 'string' ? body.name.trim() : '';
   if (email.length > 254 || !emailPattern.test(email) || email.split('@')[0].length > 64) {
     throw invalid('Enter a valid email address.');
   }
-  if (registering && (!name || name.length > 80)) throw invalid('Enter a name up to 80 characters.');
+  const name = registering ? readProfileName(body?.name) : undefined;
   return { email, name, password: readPassword(body?.password, registering) };
 }
 

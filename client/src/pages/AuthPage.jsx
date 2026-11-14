@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
+import { passwordError, passwordRequirements } from '../services/password.js';
 import '../styles/pages.css';
 
 export default function AuthPage({ mode }) {
   const registering = mode === 'register';
   const title = registering ? 'Create an account' : 'Log in';
-  const { status, signIn } = useAuth();
+  const { status, signIn, notice } = useAuth();
   const location = useLocation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,8 +25,11 @@ export default function AuthPage({ mode }) {
 
   async function submit(event) {
     event.preventDefault();
-    if ((registering && [...password].length < 12) || new TextEncoder().encode(password).length > 72) {
-      setError(registering ? 'Use at least 12 characters and no more than 72 UTF-8 bytes.' : 'Enter a valid password.');
+    if (pending) return;
+    const invalidPassword = passwordError(password, registering);
+    if (invalidPassword) {
+      setError(invalidPassword);
+      event.currentTarget.elements.password.focus();
       return;
     }
     setError('');
@@ -42,6 +46,7 @@ export default function AuthPage({ mode }) {
   return (
     <section className="public-panel auth-panel" aria-labelledby="auth-title">
       <h1 id="auth-title">{title}</h1>
+      {!registering && notice && <p className="form-success" role="status">{notice}</p>}
       <form aria-labelledby="auth-title" aria-busy={pending} onSubmit={submit}>
         {error && <p className="form-error" role="alert">{error}</p>}
         <fieldset disabled={pending}>
@@ -59,7 +64,7 @@ export default function AuthPage({ mode }) {
             Password
             <input name="password" required type={visible ? 'text' : 'password'} autoComplete={registering ? 'new-password' : 'current-password'} value={password} onChange={(event) => setPassword(event.target.value)} aria-describedby={registering ? 'password-hint' : undefined} />
           </label>
-          {registering && <p id="password-hint">Use at least 12 characters.</p>}
+          {registering && <p id="password-hint" className="field-hint">{passwordRequirements}</p>}
           <label className="password-toggle">
             <input type="checkbox" checked={visible} onChange={(event) => setVisible(event.target.checked)} />
             Show password

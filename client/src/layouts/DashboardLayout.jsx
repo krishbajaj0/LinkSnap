@@ -24,6 +24,7 @@ function DashboardShell() {
 
   return (
     <div className="dashboard-layout">
+      <a className="primary-btn skip-link" href="#main-content">Skip to main content</a>
       <div className="dashboard-navigation" onKeyDown={closeOnEscape}>
         <header className="dashboard-header">
           <Link className="brand" to="/">🔗 LinkSnap</Link>

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import LinkFields from '../components/links/LinkFields.jsx';
 import LinkTags from '../components/links/LinkTags.jsx';
 import ShortLink from '../components/links/ShortLink.jsx';
@@ -14,7 +15,8 @@ export default function LinkDetailsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [pending, setPending] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteDialog = useRef(null);
+  const deleteTrigger = useRef(null);
   const [revision, setRevision] = useState(0);
   const path = `/links/${encodeURIComponent(id)}`;
 
@@ -65,7 +67,7 @@ export default function LinkDetailsPage() {
       <Link className="text-link" to="/dashboard/links">Back to My Links</Link>
       <h1 id="details-title">Link details</h1>
       {error && <p className="form-error" role="alert">{error}</p>}
-      {success && <p role="status">{success}</p>}
+      {success && !error && <p className="form-success" role="status">{success}</p>}
       {!link && !error && <p role="status">Loading link…</p>}
       {!link && error && (
         <button className="primary-btn" type="button" onClick={() => {
@@ -77,11 +79,14 @@ export default function LinkDetailsPage() {
         <>
           <div className="dashboard-panel">
             <h2>{link.shortCode}</h2>
-            <Link className="text-link" to={`/dashboard/analytics/links/${link.id}`}>View link analytics</Link>
-            <div><Link className="text-link" to="qr">Open QR Studio</Link></div>
-            <div><Link className="text-link" to={`/preview/${link.shortCode}`}>Open destination preview</Link></div>
-            <p>Status <strong className="link-state">{link.status}</strong></p>
-            {link.needsReview && <p>This address has patterns that warrant extra caution.</p>}
+            <nav className="link-detail-nav" aria-label="Link tools">
+              <Link className="text-link" to={`/dashboard/analytics/links/${link.id}`}>View link analytics</Link>
+              <Link className="text-link" to="qr">Open QR Studio</Link>
+              <Link className="text-link" to={`/preview/${link.shortCode}`}>Open destination preview</Link>
+            </nav>
+            <p>Status <strong className="link-state" data-status={link.status}>{link.status}</strong>
+              {link.needsReview && <strong className="link-state" data-status="flagged">Flagged for review</strong>}</p>
+            {link.status === 'security-blocked' && <p>Short URL and QR redirects are blocked.</p>}
             <p>Destination {link.destination}</p>
             <p>Expiration {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : 'None'}</p>
             <ShortLink path={link.shortPath} />
@@ -90,16 +95,13 @@ export default function LinkDetailsPage() {
                 onClick={() => void run(() => update({ enabled: !link.enabled }, link.enabled ? 'Link disabled.' : 'Link enabled.'))}>
                 {link.enabled ? 'Disable link' : 'Enable link'}
               </button>
-              <button className="primary-btn link-delete" type="button" disabled={pending}
-                onClick={() => setConfirmDelete(true)}>Delete link</button>
+              <button ref={deleteTrigger} className="secondary-btn" type="button" disabled={pending}
+                onClick={() => deleteDialog.current.showModal()}>Delete link</button>
             </div>
-            {confirmDelete && (
-              <div className="link-actions">
-                <p>This will disable redirects permanently and keep the alias reserved.</p>
-                <button className="primary-btn link-delete" type="button" disabled={pending} onClick={() => void run(remove)}>Confirm deletion</button>
-                <button className="primary-btn" type="button" disabled={pending} onClick={() => setConfirmDelete(false)}>Cancel</button>
-              </div>
-            )}
+            <ConfirmDialog dialogRef={deleteDialog} title="Delete this link?"
+              description="This will disable redirects permanently and keep the alias reserved."
+              confirmLabel="Confirm deletion" danger onClose={() => deleteTrigger.current?.focus()}
+              onConfirm={() => void run(remove)} />
           </div>
           <LinkTags tags={link.tags} pending={pending} onSave={async (tags) => {
             let saved = false;

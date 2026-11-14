@@ -139,6 +139,24 @@ test('authentication against an isolated local MongoDB database', async (t) => {
     await User.updateOne({ _id: user._id }, { role: 'user' });
   });
 
+  await t.test('profile update validates fields and persists only the account name', async () => {
+    const token = initial.data.accessToken;
+    const rename = (body, options = {}) => auth('me', { method: 'PATCH', token, body, ...options });
+    assert.equal((await rename({ name: 'Guest' }, { token: undefined })).status, 401);
+    assert.equal((await rename({ name: 'Guest' }, { headers: { 'X-LinkSnap-CSRF': '' } })).status, 403);
+    for (const body of [
+      { name: '' }, { name: ' '.repeat(5) }, { name: 'a'.repeat(81) }, { name: ['Name'] },
+      { name: 'Guest', role: 'admin' }, { name: 'Guest', email: 'other@example.test' },
+    ]) {
+      assert.equal((await rename(body)).status, 400);
+    }
+    const result = await rename({ name: '  Updated name  ' });
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.data.user, { ...initial.data.user, name: 'Updated name' });
+    assert.equal(result.setCookie, null);
+    assert.deepEqual((await me(token)).data.user, result.data.user);
+  });
+
   await t.test('concurrent refresh rotates once; old token later revokes the family; expiry stays fixed', async () => {
     const id = initial.cookie.split('=')[1].split('.')[0];
     const original = await Session.findById(id);

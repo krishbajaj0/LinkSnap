@@ -35,6 +35,19 @@
   min-width: 0;
 }
 
+.link-detail-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.link-detail-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
+
 .link-created {
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
@@ -96,7 +109,7 @@
   width: 100%;
   min-height: 44px;
   padding: 0.5rem;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--color-field-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-white);
   color: var(--color-text-dark);
@@ -146,22 +159,6 @@
   outline-offset: 2px;
 }
 
-.secondary-btn {
-  min-height: 40px;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-white);
-  color: var(--color-primary-hover);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: var(--color-primary-light);
-}
-
 .tag-list {
   display: flex;
   flex-wrap: wrap;
@@ -202,22 +199,19 @@ button.tag-pill {
 }
 
 .link-state[data-status="expired"],
-.link-state[data-status="security-blocked"] {
+.link-state[data-status="flagged"] {
   background: #fef3c7;
   color: #854d0e;
 }
 
-.delete-dialog {
-  width: min(28rem, calc(100% - 2rem));
-  margin: auto;
-  padding: 1.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-dark);
+.link-state[data-status="disabled"] {
+  color: #334155;
+  background: #e2e8f0;
 }
 
-.delete-dialog::backdrop {
-  background: rgb(15 23 42 / 55%);
+.link-state[data-status="security-blocked"] {
+  color: #991b1b;
+  background: #fee2e2;
 }
 
 .link-tag-form {

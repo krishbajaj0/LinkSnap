@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import ModerationDetail from '../components/ModerationDetail.jsx';
 import '../styles/moderation.css';
 
 export default function ModerationPage() {
   const { user } = useAuth();
-  if (user.role !== 'admin') return <section><h1>Access denied</h1><p>Moderator access is required.</p></section>;
+  if (user.role !== 'admin') return (
+    <section className="dashboard-panel">
+      <h1>Access denied</h1>
+      <p>Moderator access is required.</p>
+      <Link className="text-link" to="/dashboard">Back to overview</Link>
+    </section>
+  );
   return <ModerationQueue />;
 }
 
@@ -43,7 +50,9 @@ function ModerationQueue() {
 
   return (
     <section className="moderation-page" aria-labelledby="moderation-heading">
-      <h1 id="moderation-heading">Moderation</h1>
+      <header className="workspace-heading">
+        <div><h1 id="moderation-heading">Moderation</h1><p>Review abuse reports and flagged links.</p></div>
+      </header>
       <section className="dashboard-panel">
         <h2>Moderation queue</h2>
         <div className="moderation-filters moderation-form">
@@ -69,7 +78,7 @@ function ModerationQueue() {
           setRevision((value) => value + 1);
         }}>Retry queue</button></>}
         {items && <>
-          {!items.items.length && <p>No matching items.</p>}
+          {!items.items.length && <p className="state-note">{reportQueue ? 'No reports match this filter.' : 'No links match this filter.'}</p>}
           <ul className="moderation-items">
             {items.items.map((item) => <li key={item._id ?? item.id}>
               <button type="button" className="secondary-btn" onClick={() => setSelected(item._id ?? item.id)}>

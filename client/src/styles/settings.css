@@ -1,0 +1,37 @@
+.settings-page {
+  max-width: 48rem;
+  overflow-wrap: anywhere;
+}
+
+.settings-page > .dashboard-panel + .dashboard-panel {
+  margin-top: 1rem;
+}
+
+.settings-page fieldset {
+  justify-items: start;
+  margin: 1rem 0 0;
+}
+
+.settings-page fieldset > label:not(.password-toggle) {
+  width: min(100%, 30rem);
+}
+
+.settings-page .auth-panel button {
+  width: auto;
+}
+
+.settings-page :is(.form-error, .form-success, .state-note) {
+  margin-block: 0.75rem;
+}
+
+.settings-page fieldset .form-error {
+  margin: 0;
+}
+
+.profile-email dt {
+  font-weight: 600;
+}
+
+.profile-email dd {
+  color: var(--color-text-secondary);
+}

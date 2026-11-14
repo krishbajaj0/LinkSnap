@@ -8,7 +8,7 @@ import { requireTrustedWrite, requireUser } from './middleware.js';
 import { User } from './models.js';
 import { revokeOlderSessions, revokeSession, rotateSession, startSession } from './session-service.js';
 import { createTokens } from './tokens.js';
-import { readCredentials, readPassword } from './validation.js';
+import { readCredentials, readPassword, readProfileName } from './validation.js';
 
 const passwordCost = 12;
 let dummyHash;
@@ -98,6 +98,19 @@ export function createAuthRouter(config) {
 
   router.get('/me', authenticated, (request, response) => {
     response.json({ success: true, data: { user: profile(request.user) } });
+  });
+
+  router.patch('/me', authenticated, async (request, response) => {
+    if (Object.keys(request.body ?? {}).some((key) => key !== 'name')) {
+      throw new HttpError(400, 'VALIDATION_ERROR', 'Only the profile name can be changed.');
+    }
+    const name = readProfileName(request.body?.name);
+    const user = await User.findOneAndUpdate(
+      { _id: request.user._id, sessionVersion: request.user.sessionVersion },
+      { $set: { name } }, { returnDocument: 'after', runValidators: true },
+    );
+    if (!user) throw new HttpError(409, 'ACCOUNT_CHANGED', 'Account changed. Sign in again.');
+    response.json({ success: true, data: { user: profile(user) } });
   });
 
   router.post('/logout-all', authenticated, async (request, response) => {

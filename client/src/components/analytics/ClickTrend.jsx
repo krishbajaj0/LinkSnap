@@ -8,8 +8,8 @@ function formatBucket(timestamp, interval) {
 export default function ClickTrend({ trends, interval }) {
   const format = (value) => formatBucket(value, interval);
   return (
-    <section className="dashboard-panel">
-      <h2>Clicks by {interval} (UTC)</h2>
+    <section className="dashboard-panel" aria-labelledby="click-trend-heading">
+      <h2 id="click-trend-heading">Clicks by {interval} (UTC)</h2>
       <div className="analytics-chart">
         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart data={trends} accessibilityLayer margin={{ top: 12, right: 14, left: 0, bottom: 4 }}>
@@ -24,7 +24,7 @@ export default function ClickTrend({ trends, interval }) {
       </div>
       <details className="trend-data">
         <summary>View trend data as a table</summary>
-        <table className="recent-links">
+        <table className="recent-links" aria-labelledby="click-trend-heading">
           <thead><tr><th scope="col">Time (UTC)</th><th scope="col">Clicks</th></tr></thead>
           <tbody>{trends.map((point) => <tr key={point.timestamp}>
             <td><time dateTime={point.timestamp}>{format(point.timestamp)}</time></td><td>{point.clicks}</td>

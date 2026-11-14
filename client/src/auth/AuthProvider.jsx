@@ -7,9 +7,9 @@ export default function AuthProvider({ children }) {
   const access = useRef(null);
   const inFlight = useRef(null);
 
-  const apply = useCallback((session) => {
+  const apply = useCallback((session, notice = '') => {
     access.current = session?.accessToken ?? null;
-    setState({ status: session ? 'authenticated' : 'anonymous', user: session?.user ?? null });
+    setState({ status: session ? 'authenticated' : 'anonymous', user: session?.user ?? null, notice });
     return access.current;
   }, []);
 
@@ -77,13 +77,17 @@ export default function AuthProvider({ children }) {
     });
   }
 
-  async function endAllSessions(path, options) {
+  async function endAllSessions(path, options, notice) {
     await authenticatedRequest(path, options);
-    apply(null);
+    apply(null, notice);
+  }
+
+  function updateProfile(user) {
+    setState((current) => current.user?.id === user.id ? { ...current, user } : current);
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, restore, signIn, logout, authenticatedRequest, authorizedApiRequest, endAllSessions }}>
+    <AuthContext.Provider value={{ ...state, restore, signIn, logout, authenticatedRequest, authorizedApiRequest, endAllSessions, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

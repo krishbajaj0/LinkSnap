@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
+import ConfirmDialog from './ConfirmDialog.jsx';
+
+const decisions = {
+  review: ['Mark as reviewed?', 'The item will be recorded as reviewed.', 'Mark reviewed'],
+  dismiss: ['Dismiss this report?', 'The report will leave the pending queue. The link’s redirect status stays the same.', 'Dismiss report'],
+  actioned: ['Mark report as actioned?', 'The report will record that moderation action was taken.', 'Mark actioned'],
+  block: ['Block this link?', 'The short URL and its QR code will stop redirecting to the destination.', 'Block link'],
+  unblock: ['Unblock this link?', 'Redirects can resume if the link is active and passes the current URL restrictions.', 'Unblock link'],
+};
 
 export default function ModerationDetail({ kind, id, onChange }) {
   const { authorizedApiRequest } = useAuth();
@@ -34,7 +43,7 @@ export default function ModerationDetail({ kind, id, onChange }) {
   }
 
   async function apply() {
-    dialog.current.close();
+    if (pending) return;
     setPending(true);
     setError('');
     setNotice('');
@@ -61,7 +70,7 @@ export default function ModerationDetail({ kind, id, onChange }) {
     <section className="dashboard-panel" aria-labelledby="moderation-detail-heading">
       <h2 id="moderation-detail-heading" ref={heading} tabIndex={-1}>Moderation details</h2>
       {!detail && !error && <p role="status">Loading details…</p>}
-      {notice && <p role="status">{notice}</p>}
+      {notice && <p className="form-success" role="status">{notice}</p>}
       {error && <p role="alert" className="form-error">{error}</p>}
       {report && <dl>
         <dt>Reason</dt><dd>{report.reason}</dd><dt>Status</dt><dd>{report.status}</dd>
@@ -70,7 +79,7 @@ export default function ModerationDetail({ kind, id, onChange }) {
       </dl>}
       {link && <dl>
         <dt>Short code</dt><dd>{link.shortCode}</dd><dt>Destination (query and fragment omitted)</dt><dd>{link.destination ?? 'Invalid destination'}</dd>
-        <dt>URL assessment</dt><dd>{link.safety.classification}</dd>
+        <dt>URL assessment</dt><dd>{link.safety.classification === 'needs-review' ? 'Flagged for review' : link.safety.classification}</dd>
         <dt>Risk flags</dt><dd>{link.safety.flags.join(', ') || 'None'}</dd>
         <dt>Moderation block</dt><dd>{link.blocked ? 'Blocked' : 'No moderation block'}</dd>
       </dl>}
@@ -96,14 +105,8 @@ export default function ModerationDetail({ kind, id, onChange }) {
           {entry.note && <p>{entry.note}</p>}
         </li>)}</ul>
       </details>}
-      <dialog ref={dialog} className="delete-dialog" aria-labelledby="moderation-confirm">
-        <h2 id="moderation-confirm">Confirm {decision}</h2>
-        <p>This decision will be recorded in the moderation history.</p>
-        <div className="link-actions">
-          <button type="button" className="secondary-btn" autoFocus onClick={() => dialog.current.close()}>Cancel</button>
-          <button type="button" className="primary-btn" onClick={() => void apply()}>Confirm decision</button>
-        </div>
-      </dialog>
+      <ConfirmDialog dialogRef={dialog} title={decisions[decision]?.[0]} description={decisions[decision]?.[1]}
+        confirmLabel={decisions[decision]?.[2]} danger={decision === 'block'} onConfirm={() => void apply()} />
     </section>
   );
 }
