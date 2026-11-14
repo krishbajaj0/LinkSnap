@@ -22,7 +22,13 @@ export default function ActionDisclosure({ className, label, trigger, children }
         }
       }}>
       <summary aria-label={label} ref={summary}>{trigger}</summary>
-      <div className="workspace-disclosure-panel">{children}</div>
+      <div className="workspace-disclosure-panel" onClick={(event) => {
+        // Close on same-tab navigation, including links to the current route.
+        const link = event.target.closest('a[href]');
+        if (!link || link.target || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        summary.current.focus();
+        event.currentTarget.parentElement.open = false;
+      }}>{children}</div>
     </details>
   );
 }

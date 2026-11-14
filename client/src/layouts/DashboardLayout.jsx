@@ -53,7 +53,7 @@ function DashboardShell() {
           <button ref={menuToggle} className="dashboard-menu-toggle" type="button"
             aria-label="Toggle dashboard navigation" aria-controls="dashboard-sidebar" aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}><Icon name="menu" /> Menu</button>
-          <ActionDisclosure className="workspace-account" label="Account menu" trigger={
+          <ActionDisclosure className="workspace-account" label={`Account menu${user?.name ? `, ${user.name}` : ''}`} trigger={
             <><span className="workspace-avatar" aria-hidden="true">{initials}</span>
               <span className="workspace-account-name">{user?.name}</span><Icon name="chevron" size={15} /></>
           }>

@@ -16,6 +16,7 @@ export default function AuthPage({ mode }) {
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [invalidPassword, setInvalidPassword] = useState(false);
   const requestedPath = location.state?.from;
   const destination = /^\/dashboard(?:\/(?:links(?:\/[a-f0-9]{24}(?:\/qr)?)?|analytics(?:\/links\/[a-f0-9]{24})?|settings|moderation))?$/.test(requestedPath)
     ? requestedPath
@@ -27,9 +28,10 @@ export default function AuthPage({ mode }) {
   async function submit(event) {
     event.preventDefault();
     if (pending) return;
-    const invalidPassword = passwordError(password, registering);
-    if (invalidPassword) {
-      setError(invalidPassword);
+    const passwordMessage = passwordError(password, registering);
+    if (passwordMessage) {
+      setInvalidPassword(true);
+      setError(passwordMessage);
       event.currentTarget.elements.password.focus();
       return;
     }
@@ -53,7 +55,7 @@ export default function AuthPage({ mode }) {
         </header>
         {!registering && notice && <p className="form-success" role="status">{notice}</p>}
         <form aria-labelledby="auth-title" aria-busy={pending} onSubmit={submit}>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          {error && <p id="auth-error" className="form-error" role="alert">{error}</p>}
           <fieldset disabled={pending}>
             {registering && (
               <label>
@@ -70,7 +72,15 @@ export default function AuthPage({ mode }) {
               <div>
                 <input id="account-password" name="password" required type={visible ? 'text' : 'password'}
                   autoComplete={registering ? 'new-password' : 'current-password'} value={password}
-                  onChange={(event) => setPassword(event.target.value)} aria-describedby={registering ? 'password-hint' : undefined} />
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (invalidPassword) {
+                      setInvalidPassword(false);
+                      setError('');
+                    }
+                  }}
+                  aria-invalid={invalidPassword || undefined}
+                  aria-describedby={[registering && 'password-hint', invalidPassword && 'auth-error'].filter(Boolean).join(' ') || undefined} />
                 <button type="button" className="account-password-toggle" aria-controls="account-password"
                   aria-label={visible ? 'Hide password' : 'Show password'} onClick={() => setVisible((shown) => !shown)}>
                   {visible ? 'Hide' : 'Show'}

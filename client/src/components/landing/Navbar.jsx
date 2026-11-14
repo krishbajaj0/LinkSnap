@@ -33,7 +33,8 @@ export default function Navbar() {
           </div>
           <div className="public-nav-account">
             <Link to="/login" aria-current={pathname === '/login' ? 'page' : undefined} onClick={close}>Log in</Link>
-            <Link className="primary-btn public-button" to="/register" onClick={close}>Get started <span aria-hidden="true">↗</span></Link>
+            <Link className="primary-btn public-button" to="/register" aria-current={pathname === '/register' ? 'page' : undefined}
+              onClick={close}>Get started <span aria-hidden="true">↗</span></Link>
           </div>
         </div>
       </nav>

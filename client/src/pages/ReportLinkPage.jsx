@@ -17,7 +17,7 @@ export default function ReportLinkPage() {
 function ReportForm({ code }) {
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   async function submit(event) {
     event.preventDefault();
@@ -25,12 +25,15 @@ function ReportForm({ code }) {
     const body = Object.fromEntries(new FormData(event.currentTarget));
     body.shortCode = body.shortCode.trim();
     setPending(true);
-    setError('');
+    setError(null);
     try {
       const result = await apiRequest('/reports', { method: 'POST', body });
       setSent(result.message);
     } catch (failure) {
-      setError(failure.status ? failure.message : 'Could not send the report. Try again.');
+      setError({
+        message: failure.status ? failure.message : 'Could not send the report. Try again.',
+        fields: failure.code === 'INVALID_REPORT',
+      });
     } finally {
       setPending(false);
     }
@@ -43,11 +46,13 @@ function ReportForm({ code }) {
       <p>Send an anonymous report for review. Leave out passwords and personal details.</p>
       {sent ? <p className="form-success" role="status">{sent}</p> : (
         <form className="moderation-form" onSubmit={submit} aria-busy={pending}>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          {error && <p id="report-form-error" className="form-error" role="alert">{error.message}</p>}
           <fieldset disabled={pending}>
             <label>Short code (required)<input name="shortCode" required minLength={4} maxLength={32}
-              defaultValue={code} autoCapitalize="none" spellCheck={false} /></label>
-            <label>Reason (required)<select name="reason" required defaultValue="">
+              defaultValue={code} autoCapitalize="none" spellCheck={false}
+              aria-describedby={error?.fields ? 'report-form-error' : undefined} /></label>
+            <label>Reason (required)<select name="reason" required defaultValue=""
+              aria-describedby={error?.fields ? 'report-form-error' : undefined}>
               <option value="" disabled>Choose a reason</option>
               {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select></label>

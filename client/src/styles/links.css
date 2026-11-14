@@ -249,6 +249,7 @@ button.tag-pill {
   .link-actions-heading { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
   .workspace-links-table :is(th, td).link-select-cell { width: 2.2rem; }
   .workspace-links-table td, .workspace-links-table th { padding-inline: .24rem; }
+  .workspace-destination { white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .workspace-filter-fields { grid-template-columns: minmax(0, 1fr); }
   .workspace-search .primary-btn { padding-inline: .65rem; font-size: .82rem; }
   .workspace-search-field input { font-size: .85rem; }

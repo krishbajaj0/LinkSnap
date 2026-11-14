@@ -41,6 +41,7 @@ function AnalyticsReport({ id }) {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [exportError, setExportError] = useState('');
+  const [dateError, setDateError] = useState('');
   const endpoint = id ? `/analytics/links/${encodeURIComponent(id)}` : '/analytics';
 
   useEffect(() => {
@@ -64,10 +65,19 @@ function AnalyticsReport({ id }) {
 
   function applyFilters(event) {
     event.preventDefault();
+    const form = event.currentTarget;
     const fields = new URLSearchParams();
-    for (const [key, value] of new FormData(event.currentTarget)) {
+    for (const [key, value] of new FormData(form)) {
       if (value) fields.set(key, value);
     }
+    const fromDate = fields.get('from');
+    const toDate = fields.get('to');
+    if (fromDate && toDate && fromDate > toDate) {
+      setDateError('End date must be on or after the start date.');
+      form.elements.namedItem('to').focus();
+      return;
+    }
+    setDateError('');
     load(fields.toString());
   }
 
@@ -97,24 +107,28 @@ function AnalyticsReport({ id }) {
   const { counts, visitors } = report ?? {};
   const from = report?.range.from.slice(0, 10);
   const through = report && new Date(+new Date(report.range.toExclusive) - 1).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <section className="analytics-page" aria-labelledby="analytics-title">
       {id && <Link className="text-link" to={`/dashboard/links/${id}`}>Back to link details</Link>}
       <PageHeader id="analytics-title" title={id ? 'Link analytics' : 'Analytics'}
         description={report?.shortCode ? `Short code / ${report.shortCode}` : 'Understand when and how people use your short links.'}>
-        <button type="button" className="primary-btn workspace-button" disabled={!report || exporting}
+        <button type="button" className="secondary-btn workspace-button" disabled={!report || exporting}
           onClick={() => void download()}><Icon name="download" />{exporting ? 'Preparing CSV…' : 'Export CSV'}</button>
       </PageHeader>
-      <form className="dashboard-panel workspace-card analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters">
+      <form className="dashboard-panel workspace-card analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters"
+        onChange={() => { if (dateError) setDateError(''); }}>
         <h2>Report filters</h2>
         <fieldset disabled={exporting}>
-          <label>From (UTC)<input type="date" name="from" /></label>
-          <label>Through (UTC)<input type="date" name="to" /></label>
+          <label>Start date (UTC)<input type="date" name="from" max={today} aria-describedby="analytics-date-hint" /></label>
+          <label>End date (UTC)<input type="date" name="to" max={today} aria-invalid={Boolean(dateError)}
+            aria-describedby={dateError ? 'analytics-date-error analytics-date-hint' : 'analytics-date-hint'} /></label>
           <label>Interval<select name="interval"><option value="day">Daily</option><option value="hour">Hourly</option></select></label>
           <label>Traffic<select name="traffic"><option value="all">All traffic</option><option value="human">Human estimates</option><option value="bot">Bots only</option></select></label>
           <button type="submit" className="primary-btn">Apply filters</button>
         </fieldset>
-        <p>Daily reports default to 30 days. Hourly reports default to today and support up to 7 days.</p>
+        {dateError && <p id="analytics-date-error" className="form-error" role="alert">{dateError}</p>}
+        <p id="analytics-date-hint" className="workspace-panel-caption">Dates are inclusive. With dates blank, daily shows the last 30 days and hourly shows today. Hourly supports up to 7 days.</p>
       </form>
       {exportStatus && <p className="form-success" role="status">{exportStatus}</p>}
       {exportError && <p className="form-error" role="alert">{exportError}</p>}
