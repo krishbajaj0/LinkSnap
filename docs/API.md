@@ -16,7 +16,7 @@ Import the JSON into Postman or open it in an OpenAPI-compatible viewer. The rep
 
 Access JWTs expire in 15 minutes and the client stores them in memory. Every protected request also checks session validity and the current user's session version. A refresh session expires seven days after creation, even if it rotates repeatedly. When simultaneous requests reuse the immediately preceding authentic refresh token within ten seconds, the losing request receives `409 REFRESH_CONFLICT` without a new cookie. Continue with the latest cookie. Reuse outside that overlap can revoke the session.
 
-The process-local API limit is 120 requests per IP per minute across `/api`. Registration allows eight requests, refresh 60 requests, login 12 failed attempts, and password change eight failed attempts per IP per 15 minutes. Public reports have a separate limit of five requests per IP per 15 minutes and a 4 KB JSON limit. The general JSON body limit is 32 KB. A rate-limited response can include `Retry-After`.
+The process-local API limit is 120 requests per IP per minute across `/api`. Production GET and HEAD process-liveness probes are exempt. Registration allows eight requests, refresh 60 requests, login 12 failed attempts, and password change eight failed attempts per IP per 15 minutes. Public reports have a separate limit of five requests per IP per 15 minutes and a 4 KB JSON limit. The general JSON body limit is 32 KB. A rate-limited response can include `Retry-After`.
 
 ## Response conventions
 

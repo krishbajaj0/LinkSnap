@@ -22,7 +22,7 @@ export function createRedirectRouter(config, recordClick) {
     let destination;
     try {
       const assessment = assessDestination(link.destination, config.prohibitedDomains);
-      if (assessment.classification === 'blocked') throw unavailable();
+      if (assessment.classification === 'blocked') throw unavailable;
       destination = assessment.destination;
     } catch {
       throw unavailable;

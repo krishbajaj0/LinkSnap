@@ -6,6 +6,7 @@ import { createClickRecorder } from './analytics/record.js';
 import { createAnalyticsRouter } from './analytics/routes.js';
 import { createAuthRouter } from './auth/routes.js';
 import { isMongoReady } from './database/mongo.js';
+import { createFrontendRouter } from './frontend.js';
 import { createHealthRouter } from './health/routes.js';
 import { handleError, HttpError, notFound } from './http/errors.js';
 import { createLinksRouter } from './links/routes.js';
@@ -13,11 +14,21 @@ import { createAdminRouter } from './moderation/admin.js';
 import { createSafetyRouter } from './moderation/public.js';
 import { createRedirectRouter } from './redirects/routes.js';
 
-export function createApp(config, { checkDatabase = isMongoReady, generateCode, recordClick = createClickRecorder(config) } = {}) {
+export function createApp(config, {
+  checkDatabase = isMongoReady, generateCode, recordClick = createClickRecorder(config), frontendDirectory,
+} = {}) {
   const app = express();
   if (config.trustedProxyIps?.length) app.set('trust proxy', config.trustedProxyIps);
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmet(config.environment === 'production' ? {
+    contentSecurityPolicy: {
+      directives: {
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+      },
+    },
+  } : undefined));
   app.use(cors({
     origin: (origin, callback) => callback(null, config.clientOrigins.has(origin)),
     credentials: true,
@@ -26,6 +37,9 @@ export function createApp(config, { checkDatabase = isMongoReady, generateCode, 
   app.use('/api', rateLimit({
     windowMs: 60_000,
     limit: 120,
+    // Keep the production process probe independent of a shared proxy rate-limit bucket.
+    skip: (request) => config.environment === 'production'
+      && ['GET', 'HEAD'].includes(request.method) && /^\/v1\/health\/?$/i.test(request.path),
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     handler: (_request, response, next) => {
@@ -44,6 +58,7 @@ export function createApp(config, { checkDatabase = isMongoReady, generateCode, 
   app.use('/api/v1/admin', createAdminRouter(config));
   app.use('/api', notFound);
   app.use(createRedirectRouter(config, recordClick));
+  if (config.environment === 'production') app.use(createFrontendRouter(frontendDirectory));
   app.use(notFound);
   app.use(handleError);
 

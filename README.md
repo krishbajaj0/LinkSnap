@@ -75,6 +75,8 @@ Open [the local app](http://localhost:5173). The API defaults to port 3000, with
 
 [API usage and Postman setup](docs/API.md) · [OpenAPI specification](docs/openapi.json) · [Automated and manual test guide](docs/TESTING.md)
 
+[Render and MongoDB Atlas deployment guide](docs/DEPLOYMENT.md)
+
 | Command | Purpose |
 | --- | --- |
 | `npm run dev --prefix client` | Start Vite with hot reload. |

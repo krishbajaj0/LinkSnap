@@ -34,7 +34,7 @@ See the [Atlas connection guide](https://www.mongodb.com/docs/atlas/connect-to-d
 
 When a MongoDB URI is configured, startup requires an initial connection. An invalid or unavailable connection stops startup with a sanitized error.
 
-The API limits requests under `/api` to 120 per IP per minute, including health requests. A rejected request gets a JSON `429` and a `Retry-After` header. The counters are in memory and local to each server process. Before deploying behind a reverse proxy, configure Express to trust only the deployment's actual proxy hops so the limit uses the client IP.
+The API limits requests under `/api` to 120 per IP per minute. Production GET and HEAD liveness probes are exempt. Readiness remains limited. A rejected request gets a JSON `429` and a `Retry-After` header. The counters are in memory and local to each server process. Before deploying behind a reverse proxy, configure Express to trust only verified inbound proxy peers. See the [deployment guide](../docs/DEPLOYMENT.md#proxy-and-health-behavior).
 
 Vite forwards `/api` to `http://127.0.0.1:3000` during development. Set `LINKSNAP_API_TARGET` in your shell or the ignored client `.env` if the backend uses another address. The client uses relative API URLs, so a future same-origin deployment can serve React and the API together.
 

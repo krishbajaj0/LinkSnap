@@ -23,14 +23,18 @@ export function readConfig(env = process.env) {
     throw new Error('MONGODB_URI must be a MongoDB connection string.');
   }
 
-  const defaultOrigins = environment === 'production' ? '' : developmentOrigins;
+  const renderOrigin = env.RENDER === 'true' ? env.RENDER_EXTERNAL_URL : undefined;
+  const defaultOrigins = environment === 'production' ? renderOrigin ?? '' : developmentOrigins;
   const clientOrigins = new Set(
     (env.CLIENT_ORIGINS ?? defaultOrigins).split(',').map((origin) => origin.trim()).filter(Boolean),
   );
+  const protocols = environment === 'production' ? ['https:'] : ['http:', 'https:'];
   for (const origin of clientOrigins) {
     const url = URL.parse(origin);
-    if (!url || !['http:', 'https:'].includes(url.protocol) || url.origin !== origin) {
-      throw new Error('CLIENT_ORIGINS must contain HTTP(S) origins without paths or trailing slashes.');
+    if (!url || !protocols.includes(url.protocol) || url.origin !== origin) {
+      throw new Error(environment === 'production'
+        ? 'CLIENT_ORIGINS must contain HTTPS origins without paths or trailing slashes.'
+        : 'CLIENT_ORIGINS must contain HTTP(S) origins without paths or trailing slashes.');
     }
   }
 

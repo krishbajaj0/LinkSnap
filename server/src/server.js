@@ -4,12 +4,14 @@ import { createApp } from './app.js';
 import { Session, User } from './auth/models.js';
 import { readConfig } from './config/env.js';
 import { connectMongo, disconnectMongo } from './database/mongo.js';
+import { verifyFrontend } from './frontend.js';
 import { Link } from './links/model.js';
 import { Report } from './moderation/model.js';
 
 async function start() {
   const config = readConfig();
   if (config.mongoUri) await connectMongo(config.mongoUri);
+  if (config.environment === 'production') await verifyFrontend();
   if (config.mongoUri && config.authSecret) {
     try {
       await Promise.all([User.init(), Session.init(), Link.init(), ClickEvent.init(), Report.init()]);
