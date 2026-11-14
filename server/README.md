@@ -1,5 +1,7 @@
 # LinkSnap API
 
+See the [OpenAPI contract](../docs/openapi.json), [Postman and authentication guide](../docs/API.md), and [test guide](../docs/TESTING.md) for endpoint details and verification.
+
 Run these commands from the repository root with Node.js 22.13 or newer.
 
 ```powershell
@@ -106,7 +108,7 @@ curl.exe -i http://127.0.0.1:3000/api/v1/health/ready
 npm test --prefix server
 ```
 
-Foundation tests use an injected readiness check. Authentication, link, and analytics integration tests use randomly named databases on local MongoDB at `127.0.0.1:27017` and clean up only those databases. Set `LINKSNAP_TEST_MONGO_PORT` to use a different local port. Use `npm start --prefix server` to run without file watching.
+Foundation tests use an injected readiness check. Authentication, link, analytics, and moderation integration tests use randomly named databases on a disposable MongoDB instance at `127.0.0.1:27017` and clean up only those databases. Set `LINKSNAP_TEST_MONGO_PORT` to use a different local port. Use `npm start --prefix server` to run without file watching.
 
 ## Safety and abuse moderation
 

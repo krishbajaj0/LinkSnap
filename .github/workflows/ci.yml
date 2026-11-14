@@ -1,0 +1,48 @@
+name: LinkSnap CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      npm_config_registry: https://registry.npmjs.org/
+      npm_config_replace_registry_host: always
+    services:
+      mongo:
+        image: mongo:8.0
+        ports:
+          - 127.0.0.1:27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ping:1}).ok === 1 ? 0 : 1)'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+      - run: npm ci --prefix client
+      - run: npm ci --prefix server
+      - run: npm run lint --prefix client
+      - run: npm test --prefix client
+      - run: npm run build --prefix client
+      - run: npm test --prefix server
+      - run: npx --yes @redocly/cli@2.78.0 lint --extends spec docs/openapi.json
+      - run: npm audit --prefix client --omit=dev --audit-level=high
+      - run: npm audit --prefix server --omit=dev --audit-level=high

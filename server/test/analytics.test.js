@@ -162,6 +162,12 @@ test('live redirects, authenticated reports and lifetime counters in isolated Mo
   assert.match(text, /example\.com/);
   assert.doesNotMatch(text, /other-clicks|visitorId|private|Mozilla/);
 
+  const linkExport = await request(analytics + '/links/' + first.id + '/export.csv?traffic=human', { token: owner });
+  assert.equal(linkExport.headers.get('x-analytics-export-truncated'), 'false');
+  const exportedRows = (await linkExport.text()).trim().split('\r\n').slice(1);
+  assert.equal(exportedRows.length, 2);
+  assert.ok(exportedRows.every((row) => row.includes('"primary-clicks"') && row.endsWith('"false"')));
+
   await ClickEvent.updateMany({ linkId: first.id }, { $set: { timestamp: new Date(Date.now() - 91 * dayMs) } });
   const retained = await data(await request(analytics + '/links/' + first.id, { token: owner }));
   assert.equal(retained.counts.total, 0);

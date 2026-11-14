@@ -1,0 +1,2169 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "LinkSnap API",
+    "version": "1.0.0",
+    "description": "REST API and canonical short-code redirect. See API.md for local cookie and CSRF setup. Responses can fail before route handling if the JSON body is malformed, oversized or uses unsupported encoding."
+  },
+  "servers": [{"url":"http://127.0.0.1:3000","description":"Local Express server"}],
+  "tags": [
+    {"name":"Health"},
+    {"name":"Authentication"},
+    {"name":"Links"},
+    {"name":"Analytics"},
+    {"name":"Public safety"},
+    {"name":"Moderation"},
+    {"name":"Redirects"}
+  ],
+  "paths": {
+    "/{shortCode}": {
+      "get": {
+        "tags": ["Redirects"],
+        "operationId": "followShortLink",
+        "summary": "Resolve a canonical short URL",
+        "description": "A recognized code is checked for active state and destination policy. Eligible GET requests can trigger best-effort analytics. Invalid or reserved route shapes can produce the generic route 404.",
+        "security": [],
+        "responses": {
+          "302": {
+            "description": "Redirect to the validated destination.",
+            "headers": {
+              "Location": {"schema":{"type":"string","format":"uri"}},
+              "Cache-Control": {"schema":{"const":"no-store"}},
+              "Referrer-Policy": {"schema":{"const":"no-referrer"}}
+            }
+          },
+          "404": {
+            "description": "The short link is missing or unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"SHORT_LINK_UNAVAILABLE","message":"Short link is unavailable."}
+                }
+              }
+            }
+          },
+          "500": {"$ref":"#/components/responses/Internal"}
+        },
+        "parameters": [
+          {
+            "name": "shortCode",
+            "in": "path",
+            "required": true,
+            "description": "Case-sensitive short code; reserved paths excluded.",
+            "schema": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"}
+          }
+        ]
+      },
+      "head": {
+        "tags": ["Redirects"],
+        "operationId": "inspectShortLink",
+        "summary": "Inspect a canonical short URL",
+        "description": "Uses the same redirect eligibility checks as GET and returns headers without a response body or click recording.",
+        "security": [],
+        "responses": {
+          "302": {
+            "description": "Redirect to the validated destination.",
+            "headers": {
+              "Location": {"schema":{"type":"string","format":"uri"}},
+              "Cache-Control": {"schema":{"const":"no-store"}},
+              "Referrer-Policy": {"schema":{"const":"no-referrer"}}
+            }
+          },
+          "404": {"description":"The short link or route is unavailable. HEAD has no body."},
+          "500": {"description":"Unexpected server failure. HEAD has no body."}
+        },
+        "parameters": [
+          {
+            "name": "shortCode",
+            "in": "path",
+            "required": true,
+            "description": "Case-sensitive short code; reserved paths excluded.",
+            "schema": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"}
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/links": {
+      "get": {
+        "tags": ["Moderation"],
+        "operationId": "listModerationLinks",
+        "summary": "List flagged or blocked links",
+        "description": "Requires admin role. Flagged includes non-deleted, unblocked, unreviewed links with stored flags. Blocked includes non-deleted blocked links.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Link queue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {"type":"array","items":{"$ref":"#/components/schemas/ModerationLink"}},
+                        "page": {"type":"integer","minimum":1},
+                        "limit": {"type":"integer","minimum":1},
+                        "total": {"type":"integer","minimum":0}
+                      },
+                      "required": ["items","page","limit","total"]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Page"},
+          {"$ref":"#/components/parameters/Limit"},
+          {
+            "name": "state",
+            "in": "query",
+            "description": "Moderation filter.",
+            "schema": {"type":"string","enum":["flagged","blocked"],"default":"flagged"}
+          }
+        ],
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/admin/links/{id}": {
+      "get": {
+        "tags": ["Moderation"],
+        "operationId": "getModerationLink",
+        "summary": "Read link moderation details",
+        "description": "Requires admin role. Returns redacted destination metadata and audit history.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Moderation link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "allOf": [
+                        {"$ref":"#/components/schemas/ModerationLink"},
+                        {
+                          "type": "object",
+                          "properties": {
+                            "history": {"type":"array","items":{"$ref":"#/components/schemas/AuditEntry"}}
+                          },
+                          "required": ["history"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "404": {
+            "description": "Moderation item not found.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"MODERATION_ITEM_NOT_FOUND","message":"Moderation item not found."}
+                }
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Id"}],
+        "x-required-role": "admin"
+      },
+      "patch": {
+        "tags": ["Moderation"],
+        "operationId": "moderateLink",
+        "summary": "Review, block or unblock a link",
+        "description": "Requires admin role. Review needs the current updatedAt revision; unblock rechecks destination policy. Optional reportId must refer to this link.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Link decision saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {"blocked":{"type":"boolean"}},
+                          "required": ["blocked"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {"reviewedAt":{"type":"string","format":"date-time"}},
+                          "required": ["reviewedAt"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"blocked":true}}
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "404": {
+            "description": "Moderation item not found.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"MODERATION_ITEM_NOT_FOUND","message":"Moderation item not found."}
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The link is no longer eligible or its destination remains prohibited.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "LINK_STATE_CHANGED",
+                    "message": "This link is no longer eligible for that action."
+                  }
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Id"},
+          {"$ref":"#/components/parameters/Origin"},
+          {"$ref":"#/components/parameters/Csrf"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/LinkDecision"}}}
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "tags": ["Moderation"],
+        "operationId": "listReports",
+        "summary": "List abuse reports",
+        "description": "Requires admin role. Results are newest first, with a pending default.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Report queue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {"type":"array","items":{"$ref":"#/components/schemas/Report"}},
+                        "page": {"type":"integer","minimum":1},
+                        "limit": {"type":"integer","minimum":1},
+                        "total": {"type":"integer","minimum":0}
+                      },
+                      "required": ["items","page","limit","total"]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Page"},
+          {"$ref":"#/components/parameters/Limit"},
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Report status filter.",
+            "schema": {
+              "type": "string",
+              "enum": ["pending","reviewed","dismissed","actioned","all"],
+              "default": "pending"
+            }
+          }
+        ],
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/admin/reports/{id}": {
+      "get": {
+        "tags": ["Moderation"],
+        "operationId": "getReport",
+        "summary": "Read report details",
+        "description": "Requires admin role. Returns the report history and related link if available; the fingerprint is excluded.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Report detail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "report": {
+                          "allOf": [
+                            {"$ref":"#/components/schemas/Report"},
+                            {
+                              "type": "object",
+                              "properties": {
+                                "moderationHistory": {"type":"array","items":{"$ref":"#/components/schemas/AuditEntry"}}
+                              },
+                              "required": ["moderationHistory"]
+                            }
+                          ]
+                        },
+                        "link": {"anyOf":[{"$ref":"#/components/schemas/ModerationLink"},{"type":"null"}]}
+                      },
+                      "required": ["report","link"]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "404": {
+            "description": "Moderation item not found.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"MODERATION_ITEM_NOT_FOUND","message":"Moderation item not found."}
+                }
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Id"}],
+        "x-required-role": "admin"
+      },
+      "patch": {
+        "tags": ["Moderation"],
+        "operationId": "moderateReport",
+        "summary": "Change report status",
+        "description": "Requires admin role. Review applies to pending reports. Dismiss or actioned apply to pending or reviewed reports. Performs no link state change.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Report decision saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {"type":"string","enum":["pending","reviewed","dismissed","actioned"]}
+                      },
+                      "required": ["status"]
+                    }
+                  },
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"status":"reviewed"}}
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "409": {
+            "description": "The report no longer qualifies for the transition.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "REPORT_STATE_CHANGED",
+                    "message": "This report is no longer eligible for that decision."
+                  }
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Id"},
+          {"$ref":"#/components/parameters/Origin"},
+          {"$ref":"#/components/parameters/Csrf"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/ReportDecision"}}}
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/api/v1/analytics": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getAnalytics",
+        "summary": "Read account-wide analytics",
+        "description": "Scoped to the authenticated owner. Traffic and date filters affect event metrics; lifetime counts ignore them.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Analytics report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Analytics"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/From"},
+          {"$ref":"#/components/parameters/To"},
+          {"$ref":"#/components/parameters/Interval"},
+          {"$ref":"#/components/parameters/Traffic"}
+        ]
+      }
+    },
+    "/api/v1/analytics/export.csv": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "exportAnalytics",
+        "summary": "Export account-wide analytics",
+        "description": "Scoped to the authenticated owner. Uses the same date and traffic filters as the JSON report.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "CSV download, newest first, capped at 5,000 events. Includes timestamp_utc, short_code, device, browser, os, country, referrer, is_bot.",
+            "headers": {
+              "Content-Disposition": {"schema":{"type":"string"}},
+              "X-Analytics-Export-Truncated": {"schema":{"type":"string","enum":["true","false"]}}
+            },
+            "content": {
+              "text/csv": {
+                "schema": {"type":"string"},
+                "example": "timestamp_utc,short_code,device,browser,os,country,referrer,is_bot\r\n"
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/From"},
+          {"$ref":"#/components/parameters/To"},
+          {"$ref":"#/components/parameters/Interval"},
+          {"$ref":"#/components/parameters/Traffic"}
+        ]
+      }
+    },
+    "/api/v1/analytics/links/{id}": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getLinkAnalytics",
+        "summary": "Read per-link analytics",
+        "description": "Requires an owned, non-deleted link. Traffic and date filters affect event metrics; lifetime counts ignore them.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Analytics report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Analytics"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Link missing, deleted or belongs to another user.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Id"},
+          {"$ref":"#/components/parameters/From"},
+          {"$ref":"#/components/parameters/To"},
+          {"$ref":"#/components/parameters/Interval"},
+          {"$ref":"#/components/parameters/Traffic"}
+        ]
+      }
+    },
+    "/api/v1/analytics/links/{id}/export.csv": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "exportLinkAnalytics",
+        "summary": "Export per-link analytics",
+        "description": "Requires an owned, non-deleted link. Uses the same date and traffic filters as the JSON report.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "CSV download, newest first, capped at 5,000 events. Includes timestamp_utc, short_code, device, browser, os, country, referrer, is_bot.",
+            "headers": {
+              "Content-Disposition": {"schema":{"type":"string"}},
+              "X-Analytics-Export-Truncated": {"schema":{"type":"string","enum":["true","false"]}}
+            },
+            "content": {
+              "text/csv": {
+                "schema": {"type":"string"},
+                "example": "timestamp_utc,short_code,device,browser,os,country,referrer,is_bot\r\n"
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Link missing, deleted or belongs to another user.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Id"},
+          {"$ref":"#/components/parameters/From"},
+          {"$ref":"#/components/parameters/To"},
+          {"$ref":"#/components/parameters/Interval"},
+          {"$ref":"#/components/parameters/Traffic"}
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "patch": {
+        "tags": ["Authentication"],
+        "operationId": "changePassword",
+        "summary": "Change password",
+        "description": "Verifies the current password and revokes all sessions after the change.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Password changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"type":"null"}},
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":null}
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "400": {
+            "description": "Password validation failed or current password is incorrect.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"INVALID_CURRENT_PASSWORD","message":"Current password is incorrect."}
+                }
+              }
+            }
+          },
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "409": {
+            "description": "Account changed during the update.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"ACCOUNT_CHANGED","message":"Account changed. Sign in again."}
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/PasswordChange"}}}
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "login",
+        "summary": "Log in",
+        "description": "Starts a session using valid credentials.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Session"}},
+                  "required": ["success","data"]
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {
+            "description": "Invalid credentials.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"INVALID_CREDENTIALS","message":"Email or password is incorrect."}
+                }
+              }
+            }
+          },
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/Login"}}}
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "logout",
+        "summary": "Log out of the current session",
+        "description": "Revokes a valid session cookie if present, then clears it.",
+        "security": [{"LocalRefresh":[]},{"SecureRefresh":[]},{}],
+        "responses": {
+          "200": {
+            "description": "Cookie cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"type":"null"}},
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":null}
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "logoutAll",
+        "summary": "Revoke all sessions",
+        "description": "Advances the current user's session version and clears this browser's refresh cookie.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "All sessions revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"type":"null"}},
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":null}
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "operationId": "getProfile",
+        "summary": "Read current profile",
+        "description": "Returns the signed-in user's public profile.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {"user":{"$ref":"#/components/schemas/User"}},
+                      "required": ["user"]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        }
+      },
+      "patch": {
+        "tags": ["Authentication"],
+        "operationId": "updateProfile",
+        "summary": "Update current name",
+        "description": "Only the authenticated user's name can change.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Name updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {"user":{"$ref":"#/components/schemas/User"}},
+                      "required": ["user"]
+                    }
+                  },
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "409": {
+            "description": "Account changed during the update.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"ACCOUNT_CHANGED","message":"Account changed. Sign in again."}
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "description": "Trimmed; must not be blank."
+                  }
+                },
+                "required": ["name"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "refresh",
+        "summary": "Rotate the refresh cookie",
+        "description": "Uses the current refresh cookie; rotation preserves the original expiry.",
+        "security": [{"LocalRefresh":[]},{"SecureRefresh":[]}],
+        "responses": {
+          "200": {
+            "description": "Refresh rotated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Session"}},
+                  "required": ["success","data"]
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "409": {
+            "description": "Concurrent rotation detected. Retry using the current cookie.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "REFRESH_CONFLICT",
+                    "message": "Session refresh already in progress. Try again."
+                  }
+                }
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "register",
+        "summary": "Register",
+        "description": "Creates a regular user and starts a seven-day refresh session. Requested roles do not grant privileges.",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Account and session created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Session"}},
+                  "required": ["success","data"]
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "schema": {"type":"string"},
+                "description": "Sets or clears the HttpOnly refresh cookie using the current environment's name and scope."
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "403": {"$ref":"#/components/responses/Forbidden"},
+          "409": {
+            "description": "The account could not be created.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "REGISTRATION_FAILED",
+                    "message": "Unable to create an account with these details."
+                  }
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Origin"},{"$ref":"#/components/parameters/Csrf"}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/Registration"}}}
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": ["Health"],
+        "operationId": "getLiveness",
+        "summary": "Check API liveness",
+        "description": "Returns when Express is responding.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Process is responding.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {"type":"object","properties":{"status":{"const":"ok"}},"required":["status"]}
+                  },
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"status":"ok"}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"}
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": ["Health"],
+        "operationId": "getReadiness",
+        "summary": "Check database readiness",
+        "description": "Returns 503 if MongoDB is unconfigured or a ping fails.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "MongoDB is ready.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {"type":"object","properties":{"status":{"const":"ready"}},"required":["status"]}
+                  },
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"status":"ready"}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {
+            "description": "MongoDB is unconfigured or unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"DATABASE_UNAVAILABLE","message":"Database is unavailable."}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/links": {
+      "get": {
+        "tags": ["Links"],
+        "operationId": "listLinks",
+        "summary": "List owned links",
+        "description": "Returns the current user's non-deleted links. Search matches literal substrings in code, destination and tags. Date filters are inclusive UTC days.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Paginated links.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/LinkList"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [
+          {"$ref":"#/components/parameters/Page"},
+          {"$ref":"#/components/parameters/Limit"},
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Case-insensitive substring.",
+            "schema": {"type":"string","maxLength":100}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Lifecycle status.",
+            "schema": {"type":"string","enum":["active","disabled","expired","security-blocked"]}
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "description": "Exact normalized tag.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "Letters and digits separated by spaces or hyphens; normalized to lowercase."
+            }
+          },
+          {
+            "name": "createdFrom",
+            "in": "query",
+            "description": "Inclusive UTC start date.",
+            "schema": {"type":"string","format":"date"}
+          },
+          {
+            "name": "createdTo",
+            "in": "query",
+            "description": "Inclusive UTC end date.",
+            "schema": {"type":"string","format":"date"}
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Expiration sorts latest deadlines first, then unset deadlines.",
+            "schema": {
+              "type": "string",
+              "enum": ["newest","oldest","updated","expiration","code"],
+              "default": "newest"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": ["Links"],
+        "operationId": "createLink",
+        "summary": "Create a short link",
+        "description": "Creates an owned link with a custom alias or generated code. Tags are normalized and deduplicated.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "201": {
+            "description": "Short link created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Link"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "409": {
+            "description": "Alias already reserved.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"ALIAS_UNAVAILABLE","message":"This alias is unavailable."}
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {
+            "description": "Link service is unavailable or code generation failed.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "CODE_GENERATION_FAILED",
+                    "message": "Could not reserve a short code. Try again."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/CreateLink"}}}
+        }
+      }
+    },
+    "/api/v1/links/{id}": {
+      "get": {
+        "tags": ["Links"],
+        "operationId": "getLink",
+        "summary": "Read an owned link",
+        "description": "Reads a single non-deleted link owned by the caller.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Link"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Link missing, deleted or belongs to another user.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Id"}]
+      },
+      "patch": {
+        "tags": ["Links"],
+        "operationId": "updateLink",
+        "summary": "Edit an owned link",
+        "description": "Updates allowed fields. Tags replace the current list. Alias and owner are immutable. Enabling a security-blocked link returns 409.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Link updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Link"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Link missing, deleted or belongs to another user.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+              }
+            }
+          },
+          "409": {"$ref":"#/components/responses/Conflict"},
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Id"}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/UpdateLink"}}}
+        }
+      },
+      "delete": {
+        "tags": ["Links"],
+        "operationId": "deleteLink",
+        "summary": "Soft-delete an owned link",
+        "description": "Stops future redirects while permanently reserving the code.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Link deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"type":"null"}},
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":null}
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Link missing, deleted or belongs to another user.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "parameters": [{"$ref":"#/components/parameters/Id"}]
+      }
+    },
+    "/api/v1/links/bulk": {
+      "post": {
+        "tags": ["Links"],
+        "operationId": "updateLinksInBulk",
+        "summary": "Apply a bulk operation",
+        "description": "Applies changes per owned eligible link. Duplicate IDs are collapsed. Missing, foreign, deleted and ineligible links count as skipped. Enable cannot clear a security block.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Bulk result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/BulkResult"}},
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"requested":2,"changed":1,"skipped":1}}
+              }
+            }
+          },
+          "400": {"$ref":"#/components/responses/BadRequest"},
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {"$ref":"#/components/responses/Encoding"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/BulkRequest"}}}
+        }
+      }
+    },
+    "/api/v1/links/overview": {
+      "get": {
+        "tags": ["Links"],
+        "operationId": "getOverview",
+        "summary": "Get dashboard overview",
+        "description": "Returns owned, non-deleted link totals, seven-day activity and up to five rows per recent list.",
+        "security": [{"Bearer":[]}],
+        "responses": {
+          "200": {
+            "description": "Dashboard data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Overview"}},
+                  "required": ["success","data"]
+                }
+              }
+            }
+          },
+          "401": {"$ref":"#/components/responses/Unauthorized"},
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/api/v1/preview/{code}": {
+      "get": {
+        "tags": ["Public safety"],
+        "operationId": "getPreview",
+        "summary": "Preview a short link",
+        "description": "Current state and destination policy are checked. Only hostname, protocol, caution flag and canonical relative path are exposed. No click is recorded.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Preview metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {"success":{"const":true},"data":{"$ref":"#/components/schemas/Preview"}},
+                  "required": ["success","data"]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "hostname": "example.com",
+                    "protocol": "https:",
+                    "needsReview": false,
+                    "continuePath": "/sample-link"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The short link is missing or unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"SHORT_LINK_UNAVAILABLE","message":"Short link is unavailable."}
+                }
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"}
+        },
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "description": "Public short code.",
+            "schema": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"}
+          }
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "tags": ["Public safety"],
+        "operationId": "submitReport",
+        "summary": "Submit an anonymous abuse report",
+        "description": "Reports use a 4 KB JSON body and a five-per-IP per 15-minute limit. Valid unknown, duplicate and honeypot submissions receive the same acknowledgment.",
+        "security": [],
+        "responses": {
+          "202": {
+            "description": "Report acknowledged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"const":true},
+                    "data": {
+                      "type": "object",
+                      "properties": {"message":{"type":"string"}},
+                      "required": ["message"]
+                    }
+                  },
+                  "required": ["success","data"]
+                },
+                "example": {"success":true,"data":{"message":"Report received for consideration."}}
+              }
+            }
+          },
+          "400": {
+            "description": "Report fields or plain-text description are invalid.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {
+                  "success": false,
+                  "error": {"code":"INVALID_REPORT","message":"Enter a valid short code and report reason."}
+                }
+              }
+            }
+          },
+          "413": {"$ref":"#/components/responses/TooLarge"},
+          "415": {
+            "description": "The body must be JSON with supported encoding.",
+            "content": {
+              "application/json": {
+                "schema": {"$ref":"#/components/schemas/Error"},
+                "example": {"success":false,"error":{"code":"JSON_REQUIRED","message":"Send a JSON report."}}
+              }
+            }
+          },
+          "429": {"$ref":"#/components/responses/RateLimit"},
+          "500": {"$ref":"#/components/responses/Internal"},
+          "503": {"$ref":"#/components/responses/Unavailable"}
+        },
+        "requestBody": {
+          "required": true,
+          "content": {"application/json":{"schema":{"$ref":"#/components/schemas/SubmitReport"}}}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "Bearer": {"type":"http","scheme":"bearer","bearerFormat":"JWT"},
+      "LocalRefresh": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "linksnap_refresh",
+        "description": "Local HttpOnly refresh cookie."
+      },
+      "SecureRefresh": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-linksnap_refresh",
+        "description": "Production Secure, HttpOnly refresh cookie."
+      }
+    },
+    "parameters": {
+      "Id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "MongoDB ObjectId.",
+        "schema": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"}
+      },
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "description": "One-based page number.",
+        "schema": {"type":"integer","minimum":1,"maximum":1000,"default":1}
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Page size.",
+        "schema": {"type":"integer","minimum":1,"maximum":50,"default":10}
+      },
+      "Origin": {
+        "name": "Origin",
+        "in": "header",
+        "required": true,
+        "description": "Exact origin in CLIENT_ORIGINS, for example http://localhost:5173.",
+        "schema": {"type":"string"}
+      },
+      "Csrf": {
+        "name": "X-LinkSnap-CSRF",
+        "in": "header",
+        "required": true,
+        "description": "Required trusted write header.",
+        "schema": {"type":"string","const":"1"}
+      },
+      "From": {
+        "name": "from",
+        "in": "query",
+        "description": "Inclusive start day in UTC.",
+        "schema": {"type":"string","format":"date"}
+      },
+      "To": {
+        "name": "to",
+        "in": "query",
+        "description": "Inclusive final day in UTC; defaults to today.",
+        "schema": {"type":"string","format":"date"}
+      },
+      "Interval": {
+        "name": "interval",
+        "in": "query",
+        "description": "Daily defaults to 30 days, up to 90 days within retention. Hourly defaults to today, up to 7 days.",
+        "schema": {"type":"string","enum":["day","hour"],"default":"day"}
+      },
+      "Traffic": {
+        "name": "traffic",
+        "in": "query",
+        "description": "Filter by heuristic bot classification.",
+        "schema": {"type":"string","enum":["all","human","bot"],"default":"all"}
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid input or malformed JSON.",
+        "content": {"application/json":{"schema":{"$ref":"#/components/schemas/Error"}}}
+      },
+      "Unauthorized": {
+        "description": "Missing, expired or revoked access or refresh credentials.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"UNAUTHENTICATED","message":"Please sign in to continue."}
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The route requires the admin role or trusted write headers.",
+        "content": {"application/json":{"schema":{"$ref":"#/components/schemas/Error"}}}
+      },
+      "Missing": {
+        "description": "The resource is unavailable or not owned by the caller.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {"success":false,"error":{"code":"LINK_NOT_FOUND","message":"Link not found."}}
+          }
+        }
+      },
+      "Conflict": {
+        "description": "State changed, a duplicate alias was requested, or the requested decision is no longer eligible.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"LINK_SECURITY_BLOCKED","message":"Only a moderator can unblock this link."}
+            }
+          }
+        }
+      },
+      "TooLarge": {
+        "description": "Request exceeds the JSON body size limit.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"PAYLOAD_TOO_LARGE","message":"Request body exceeds the size limit."}
+            }
+          }
+        }
+      },
+      "Encoding": {
+        "description": "Unsupported body encoding.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"UNSUPPORTED_ENCODING","message":"Request body encoding is unsupported."}
+            }
+          }
+        }
+      },
+      "RateLimit": {
+        "description": "Request received after the process-local rate limit.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"RATE_LIMIT_EXCEEDED","message":"Too many requests. Try again later."}
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {"schema":{"type":"integer","minimum":0},"description":"Seconds before retrying."}
+        }
+      },
+      "Internal": {
+        "description": "Unexpected server failure.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref":"#/components/schemas/Error"},
+            "example": {
+              "success": false,
+              "error": {"code":"INTERNAL_ERROR","message":"An unexpected error occurred."}
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Required service is unavailable.",
+        "content": {"application/json":{"schema":{"$ref":"#/components/schemas/Error"}}}
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {"const":false},
+          "error": {
+            "type": "object",
+            "properties": {"code":{"type":"string"},"message":{"type":"string"}},
+            "required": ["code","message"]
+          }
+        },
+        "required": ["success","error"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "name": {"type":"string","minLength":1,"maxLength":80,"description":"Trimmed; must not be blank."},
+          "email": {"type":"string","format":"email","maxLength":254},
+          "role": {"type":"string","enum":["user","admin"]}
+        },
+        "required": ["id","name","email","role"]
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "user": {"$ref":"#/components/schemas/User"},
+          "accessToken": {"type":"string","description":"Opaque to clients; send as the Bearer access JWT."}
+        },
+        "required": ["user","accessToken"]
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "email": {"type":"string","format":"email","maxLength":254},
+          "password": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true,
+            "description": "UTF-8 encoded password must fit in 72 bytes."
+          }
+        },
+        "required": ["email","password"]
+      },
+      "Registration": {
+        "type": "object",
+        "properties": {
+          "name": {"type":"string","minLength":1,"maxLength":80,"description":"Trimmed; must not be blank."},
+          "email": {"type":"string","format":"email","maxLength":254},
+          "password": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true,
+            "description": "UTF-8 encoded password must fit in 72 bytes.",
+            "minLength": 12
+          }
+        },
+        "required": ["name","email","password"]
+      },
+      "PasswordChange": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true,
+            "description": "UTF-8 encoded password must fit in 72 bytes."
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true,
+            "description": "UTF-8 encoded password must fit in 72 bytes.",
+            "minLength": 12
+          }
+        },
+        "required": ["currentPassword","newPassword"]
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "destination": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "HTTP or HTTPS only, without embedded credentials; domain policy is applied."
+          },
+          "shortCode": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"},
+          "shortPath": {"type":"string"},
+          "codeType": {"type":"string","enum":["automatic","custom"]},
+          "expiresAt": {"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}]},
+          "enabled": {"type":"boolean"},
+          "status": {"type":"string","enum":["active","disabled","expired","security-blocked"]},
+          "createdAt": {"type":"string","format":"date-time"},
+          "updatedAt": {"type":"string","format":"date-time"},
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "Letters and digits separated by spaces or hyphens; normalized to lowercase."
+            },
+            "maxItems": 10
+          },
+          "needsReview": {"type":"boolean"}
+        },
+        "required": [
+          "id",
+          "destination",
+          "shortCode",
+          "shortPath",
+          "codeType",
+          "expiresAt",
+          "enabled",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "tags",
+          "needsReview"
+        ]
+      },
+      "CreateLink": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "HTTP or HTTPS only, without embedded credentials; domain policy is applied."
+          },
+          "alias": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{4,32}$",
+            "description": "Reserved application paths are rejected."
+          },
+          "expiresAt": {
+            "anyOf": [{"type":"string","format":"date-time"},{"type":"null"}],
+            "description": "A future UTC ISO timestamp, or null to remove expiration."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "Letters and digits separated by spaces or hyphens; normalized to lowercase."
+            },
+            "maxItems": 10
+          }
+        },
+        "required": ["destination"],
+        "additionalProperties": false
+      },
+      "UpdateLink": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "description": "HTTP or HTTPS only, without embedded credentials; domain policy is applied."
+          },
+          "expiresAt": {
+            "anyOf": [{"type":"string","format":"date-time"},{"type":"null"}],
+            "description": "A future UTC ISO timestamp, or null to remove expiration."
+          },
+          "enabled": {"type":"boolean"},
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "description": "Letters and digits separated by spaces or hyphens; normalized to lowercase."
+            },
+            "maxItems": 10
+          }
+        },
+        "additionalProperties": false,
+        "minProperties": 1
+      },
+      "LinkList": {
+        "type": "object",
+        "properties": {
+          "links": {"type":"array","items":{"$ref":"#/components/schemas/Link"}},
+          "page": {"type":"integer","minimum":1},
+          "limit": {"type":"integer","minimum":1},
+          "total": {"type":"integer","minimum":0},
+          "hasLinks": {"type":"boolean"}
+        },
+        "required": ["links","page","limit","total","hasLinks"]
+      },
+      "BulkRequest": {
+        "type": "object",
+        "properties": {
+          "action": {"type":"string","enum":["enable","disable","delete","add-tag","remove-tag"]},
+          "ids": {
+            "type": "array",
+            "items": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+            "minItems": 1,
+            "maxItems": 50
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "Letters and digits separated by spaces or hyphens; normalized to lowercase."
+          }
+        },
+        "required": ["action","ids"],
+        "additionalProperties": false,
+        "if": {"properties":{"action":{"enum":["add-tag","remove-tag"]}}},
+        "then": {"required":["tag"]},
+        "else": {"not":{"required":["tag"]}}
+      },
+      "BulkResult": {
+        "type": "object",
+        "properties": {
+          "requested": {"type":"integer","minimum":0},
+          "changed": {"type":"integer","minimum":0},
+          "skipped": {"type":"integer","minimum":0}
+        },
+        "required": ["requested","changed","skipped"]
+      },
+      "Overview": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "type": "object",
+            "properties": {
+              "total": {"type":"integer","minimum":0},
+              "active": {"type":"integer","minimum":0},
+              "disabled": {"type":"integer","minimum":0},
+              "expired": {"type":"integer","minimum":0},
+              "security-blocked": {"type":"integer","minimum":0},
+              "recentlyCreated": {"type":"integer","minimum":0},
+              "recentlyUpdated": {"type":"integer","minimum":0}
+            },
+            "required": [
+              "total",
+              "active",
+              "disabled",
+              "expired",
+              "security-blocked",
+              "recentlyCreated",
+              "recentlyUpdated"
+            ]
+          },
+          "newest": {"type":"array","items":{"$ref":"#/components/schemas/Link"},"maxItems":5},
+          "updated": {"type":"array","items":{"$ref":"#/components/schemas/Link"},"maxItems":5}
+        },
+        "required": ["counts","newest","updated"]
+      },
+      "Analytics": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "object",
+            "properties": {
+              "from": {"type":"string","format":"date-time"},
+              "toExclusive": {"type":"string","format":"date-time"},
+              "interval": {"type":"string","enum":["day","hour"]},
+              "traffic": {"type":"string","enum":["all","human","bot"]}
+            },
+            "required": ["from","toExclusive","interval","traffic"]
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "total": {"type":"integer","minimum":0},
+              "bot": {"type":"integer","minimum":0},
+              "human": {"type":"integer","minimum":0}
+            },
+            "required": ["total","bot","human"]
+          },
+          "lifetime": {
+            "type": "object",
+            "properties": {
+              "total": {"type":"integer","minimum":0},
+              "bot": {"type":"integer","minimum":0},
+              "human": {"type":"integer","minimum":0}
+            },
+            "required": ["total","bot","human"]
+          },
+          "visitors": {
+            "type": "object",
+            "properties": {
+              "approximate": {"anyOf":[{"type":"integer","minimum":0},{"type":"null"}]},
+              "identifiedClicks": {"type":"integer","minimum":0},
+              "enabled": {"type":"boolean"}
+            },
+            "required": ["approximate","identifiedClicks","enabled"]
+          },
+          "trends": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "timestamp": {"type":"string","format":"date-time"},
+                "clicks": {"type":"integer","minimum":0}
+              },
+              "required": ["timestamp","clicks"]
+            }
+          },
+          "breakdowns": {
+            "type": "object",
+            "properties": {
+              "device": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"label":{"type":"string"},"clicks":{"type":"integer","minimum":0}},
+                  "required": ["label","clicks"]
+                },
+                "maxItems": 12
+              },
+              "browser": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"label":{"type":"string"},"clicks":{"type":"integer","minimum":0}},
+                  "required": ["label","clicks"]
+                },
+                "maxItems": 12
+              },
+              "os": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"label":{"type":"string"},"clicks":{"type":"integer","minimum":0}},
+                  "required": ["label","clicks"]
+                },
+                "maxItems": 12
+              },
+              "country": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"label":{"type":"string"},"clicks":{"type":"integer","minimum":0}},
+                  "required": ["label","clicks"]
+                },
+                "maxItems": 12
+              },
+              "referrer": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"label":{"type":"string"},"clicks":{"type":"integer","minimum":0}},
+                  "required": ["label","clicks"]
+                },
+                "maxItems": 12
+              }
+            },
+            "required": ["device","browser","os","country","referrer"]
+          },
+          "topLinks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+                "shortCode": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"},
+                "deleted": {"type":"boolean"},
+                "clicks": {"type":"integer","minimum":0}
+              },
+              "required": ["id","shortCode","deleted","clicks"]
+            },
+            "maxItems": 10
+          },
+          "shortCode": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"}
+        },
+        "required": ["range","counts","lifetime","visitors","trends","breakdowns","topLinks"]
+      },
+      "Preview": {
+        "type": "object",
+        "properties": {
+          "hostname": {"type":"string"},
+          "protocol": {"type":"string","enum":["http:","https:"]},
+          "needsReview": {"type":"boolean"},
+          "continuePath": {"type":"string"}
+        },
+        "required": ["hostname","protocol","needsReview","continuePath"]
+      },
+      "SubmitReport": {
+        "type": "object",
+        "properties": {
+          "shortCode": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"},
+          "reason": {"type":"string","enum":["phishing","malware","spam","impersonation","other"]},
+          "description": {"type":"string","maxLength":500},
+          "website": {"type":"string","description":"Honeypot; omit or leave empty."}
+        },
+        "required": ["shortCode","reason"],
+        "additionalProperties": false
+      },
+      "AuditEntry": {
+        "type": "object",
+        "properties": {
+          "moderatorId": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "reportId": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "action": {"type":"string","enum":["review","dismiss","actioned","block","unblock"]},
+          "note": {"type":"string","maxLength":500},
+          "timestamp": {"type":"string","format":"date-time"}
+        },
+        "required": ["moderatorId","action","note","timestamp"]
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "_id": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "__v": {"type":"integer","minimum":0},
+          "linkId": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "reason": {"type":"string","enum":["phishing","malware","spam","impersonation","other"]},
+          "description": {"type":"string","maxLength":500},
+          "status": {"type":"string","enum":["pending","reviewed","dismissed","actioned"]},
+          "moderatorId": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "decision": {"type":"string","enum":["review","dismiss","actioned"]},
+          "notes": {"type":"string","maxLength":500},
+          "createdAt": {"type":"string","format":"date-time"},
+          "updatedAt": {"type":"string","format":"date-time"}
+        },
+        "required": ["_id","linkId","reason","description","status","notes","createdAt","updatedAt"]
+      },
+      "ModerationLink": {
+        "type": "object",
+        "properties": {
+          "id": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "shortCode": {"type":"string","pattern":"^(?:[A-Za-z0-9]{8}|[a-z0-9-]{4,32})$"},
+          "destination": {
+            "anyOf": [
+              {"type":"string","description":"Origin and pathname only; query and fragment omitted."},
+              {"type":"null"}
+            ]
+          },
+          "safety": {
+            "type": "object",
+            "properties": {
+              "classification": {"type":"string","enum":["safe-looking","needs-review","blocked"]},
+              "flags": {"type":"array","items":{"type":"string"}}
+            },
+            "required": ["classification","flags"]
+          },
+          "blocked": {"type":"boolean"},
+          "deleted": {"type":"boolean"},
+          "reviewedAt": {"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}]},
+          "updatedAt": {"type":"string","format":"date-time"}
+        },
+        "required": ["id","shortCode","destination","safety","blocked","deleted"]
+      },
+      "ReportDecision": {
+        "type": "object",
+        "properties": {
+          "action": {"type":"string","enum":["review","dismiss","actioned"]},
+          "note": {"type":"string","maxLength":500}
+        },
+        "required": ["action"],
+        "additionalProperties": false
+      },
+      "LinkDecision": {
+        "type": "object",
+        "properties": {
+          "action": {"type":"string","enum":["block","unblock","review"]},
+          "note": {"type":"string","maxLength":500},
+          "reportId": {"type":"string","pattern":"^[a-fA-F0-9]{24}$"},
+          "updatedAt": {"type":"string","format":"date-time"}
+        },
+        "required": ["action"],
+        "additionalProperties": false,
+        "if": {"properties":{"action":{"const":"review"}}},
+        "then": {"required":["updatedAt"]}
+      }
+    }
+  }
+}
