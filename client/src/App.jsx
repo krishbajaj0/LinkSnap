@@ -36,7 +36,7 @@ export default function App() {
             <Route index element={<DashboardOverview />} />
             <Route path="links" element={<LinksPage />} />
             <Route path="links/:id" element={<LinkDetailsPage />} />
-            <Route path="links/:id/qr" element={<Suspense fallback={<p role="status">Loading QR Studio…</p>}><QrStudioPage /></Suspense>} />
+            <Route path="links/:id?/qr" element={<Suspense fallback={<p role="status">Loading QR Studio…</p>}><QrStudioPage /></Suspense>} />
             <Route path="analytics" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="analytics/links/:id" element={<Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsPage /></Suspense>} />
             <Route path="settings" element={<SettingsPage />} />

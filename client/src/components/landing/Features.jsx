@@ -11,8 +11,7 @@ export default function Features() {
   return (
     <section id="features" className="landing-section public-container" tabIndex={-1} aria-labelledby="features-title">
       <header className="landing-section-heading">
-        <h2 id="features-title">More than a shorter URL.</h2>
-        <p>Manage your links, measure traffic, and share from one workspace.</p>
+        <h2 id="features-title">A workspace for every link.</h2>
       </header>
       <ul className="feature-grid">
         {features.map(([icon, title, detail]) => (

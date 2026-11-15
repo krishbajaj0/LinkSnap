@@ -35,6 +35,7 @@ export default function ModerationDetail({ kind, id, onChange }) {
   const [decision, setDecision] = useState('');
   const [revision, setRevision] = useState(0);
   const dialog = useRef(null);
+  const decisionTrigger = useRef(null);
   const heading = useRef(null);
 
   useEffect(() => {
@@ -54,7 +55,8 @@ export default function ModerationDetail({ kind, id, onChange }) {
   const report = kind === 'reports' ? detail?.report : null;
   const link = kind === 'reports' ? detail?.link : detail;
 
-  function confirm(action) {
+  function confirm(action, trigger) {
+    decisionTrigger.current = trigger;
     setDecision(action);
     dialog.current.showModal();
   }
@@ -117,21 +119,22 @@ export default function ModerationDetail({ kind, id, onChange }) {
         <label>Moderator note (optional)<textarea maxLength={500} rows={3} value={note} disabled={pending}
           onChange={(event) => setNote(event.target.value)} /></label>
         <div className="link-actions">
-          {report?.status === 'pending' && <button type="button" className="secondary-btn" disabled={pending} onClick={() => confirm('review')}>Review</button>}
+          {report?.status === 'pending' && <button type="button" className="secondary-btn" disabled={pending} onClick={(event) => confirm('review', event.currentTarget)}>Review</button>}
           {!report && link && !link.deleted && !link.reviewedAt && !link.blocked && link.safety.flags.length > 0
-            && <button type="button" className="secondary-btn" disabled={pending} onClick={() => confirm('review')}>Mark link reviewed</button>}
+            && <button type="button" className="secondary-btn" disabled={pending} onClick={(event) => confirm('review', event.currentTarget)}>Mark link reviewed</button>}
           {report && ['pending', 'reviewed'].includes(report.status) && <>
-            <button type="button" className="secondary-btn" disabled={pending} onClick={() => confirm('dismiss')}>Dismiss</button>
-            <button type="button" className="secondary-btn" disabled={pending} onClick={() => confirm('actioned')}>Mark actioned</button>
+            <button type="button" className="secondary-btn" disabled={pending} onClick={(event) => confirm('dismiss', event.currentTarget)}>Dismiss</button>
+            <button type="button" className="secondary-btn" disabled={pending} onClick={(event) => confirm('actioned', event.currentTarget)}>Mark actioned</button>
           </>}
           {link && !link.deleted && <button type="button" className={link.blocked ? 'primary-btn' : 'secondary-btn link-detail-delete'} disabled={pending}
-            onClick={() => confirm(link.blocked ? 'unblock' : 'block')}>{link.blocked ? 'Unblock link' : 'Block link'}</button>}
+            onClick={(event) => confirm(link.blocked ? 'unblock' : 'block', event.currentTarget)}>{link.blocked ? 'Unblock link' : 'Block link'}</button>}
         </div>
       </div>}
       <ModerationHistory title="Report history" entries={report?.moderationHistory} />
       <ModerationHistory title="Link moderation history" entries={link?.history} />
       <ConfirmDialog dialogRef={dialog} title={decisions[decision]?.[0]} description={decisions[decision]?.[1]}
-        confirmLabel={decisions[decision]?.[2]} danger={decision === 'block'} onConfirm={() => void apply()} />
+        confirmLabel={decisions[decision]?.[2]} danger={decision === 'block'} onConfirm={() => void apply()}
+        onClose={() => decisionTrigger.current?.focus()} />
     </section>
   );
 }

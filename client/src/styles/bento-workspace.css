@@ -1,3 +1,30 @@
+.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)),
+.public-layout {
+  --bento-bg: #f7f8fc;
+  --bento-card: #fff;
+  --bento-primary: var(--color-primary);
+  --bento-accent: var(--color-primary-light);
+  --bento-ink: #111827;
+  --bento-muted: #6b7280;
+  --bento-border: #e5e7f0;
+  --bento-radius: 16px;
+  --bento-gap: 16px;
+  --bento-shadow: 0 2px 4px #11182705, 0 8px 24px #35327005;
+  --bento-transition: 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell:has(:is(.dashboard-overview, .bento-workspace)),
+  .public-layout {
+    --bento-transition: 0s;
+  }
+}
+
+.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
+  background: var(--bento-bg);
+  color: var(--bento-ink);
+}
+
 .workspace-shell:has(.bento-workspace) .dashboard-sidebar a {
   border-radius: 12px;
   transition: background-color var(--bento-transition), color var(--bento-transition);

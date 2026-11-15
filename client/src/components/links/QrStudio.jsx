@@ -67,7 +67,7 @@ export default function QrStudio({ link }) {
     try {
       setLogo(await readLogo(file));
     } catch (failure) {
-      setError(failure.message);
+      setError({ message: failure.message, source: 'logo' });
     } finally {
       setReading(false);
     }
@@ -77,7 +77,7 @@ export default function QrStudio({ link }) {
     setSettings(defaults);
     setLogo(null);
     setError('');
-    setNotice('Default settings restored.');
+    setNotice({ message: 'Default settings restored.', source: 'settings' });
   }
 
   async function exportFile(format) {
@@ -88,9 +88,9 @@ export default function QrStudio({ link }) {
     try {
       const blob = format === 'png' ? await pngBlob(preview.svg, settings.size) : svgBlob(preview.svg);
       downloadQr(blob, `linksnap-${link.shortCode}.${format}`);
-      setNotice(`${format.toUpperCase()} download started.`);
+      setNotice({ message: `${format.toUpperCase()} download started.`, source: 'export' });
     } catch {
-      setError('Could not export the QR image. Try again.');
+      setError({ message: 'Could not export the QR image. Try again.', source: 'export' });
     } finally {
       setExporting('');
     }
@@ -99,55 +99,66 @@ export default function QrStudio({ link }) {
   if (target.error) return <p className="form-error" role="alert">{target.error}</p>;
 
   return (
-    <>
-      <section className="dashboard-panel workspace-card qr-url">
+    <div className="qr-grid">
+      <section className="dashboard-panel workspace-card qr-preview" aria-labelledby="qr-preview-title" aria-busy={busy}>
         <div className="qr-url-heading">
-          <CardHeading icon="link" title="Encoded short URL" />
+          <CardHeading id="qr-preview-title" icon="qr" title="Live preview" />
           <StatusBadge status={link.status} />
         </div>
-        <ShortLink path={link.shortPath} url={target.url} />
-        {import.meta.env.DEV && !import.meta.env.VITE_PUBLIC_BASE_URL?.trim() && (
-          <p>This QR code is for local testing and uses this computer’s loopback address.</p>
-        )}
-        {link.status !== 'active' && <p>This link is {link.status} and currently does not redirect.</p>}
+        <div className="qr-canvas">
+          {preview.src && <img className="qr-image" src={preview.src} width={settings.size} height={settings.size}
+            alt={`QR code for ${target.url}`} />}
+          {preview.error && <p className="form-error" role="alert">{preview.error}</p>}
+        </div>
+        <div className="qr-url">
+          <p className="workspace-panel-caption">Encoded short URL</p>
+          <ShortLink path={link.shortPath} url={target.url} />
+          {import.meta.env.DEV && !import.meta.env.VITE_PUBLIC_BASE_URL?.trim() && (
+            <p className="workspace-panel-caption">Local preview codes use this computer’s loopback address.</p>
+          )}
+          {link.status !== 'active' && <p>This link is {link.status} and currently does not redirect.</p>}
+        </div>
       </section>
-      <div className="qr-grid">
-        <section className="dashboard-panel workspace-card qr-preview" aria-busy={busy}>
-          <CardHeading icon="qr" title="Live preview" />
-          <div className="qr-canvas">
-            {preview.src && <img className="qr-image" src={preview.src} width={settings.size} height={settings.size}
-              alt={`QR code for ${target.url}`} />}
-            {preview.error && <p className="form-error" role="alert">{preview.error}</p>}
-          </div>
-          <p className="workspace-panel-caption">Test the code at the size you plan to share or print.</p>
+      <section className="dashboard-panel workspace-card qr-settings" aria-labelledby="qr-settings-title">
+        <CardHeading id="qr-settings-title" icon="settings" title="Customize" />
+        <fieldset disabled={busy}>
+          <ColorControl label="Foreground" value={settings.foreground} onChange={(value) => change('foreground', value)} />
+          <ColorControl label="Background" value={settings.background} onChange={(value) => change('background', value)} />
+          <label>Export size <select value={settings.size} onChange={(event) => change('size', Number(event.target.value))}>
+            {sizes.map((size) => <option key={size} value={size}>{size} × {size} px</option>)}
+          </select></label>
+          <label>Center logo <input type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-hint" onChange={upload} /></label>
+          <p id="logo-hint">PNG, JPEG or WebP. Up to 2 MB and 2048 × 2048 px. Kept in this browser.</p>
+          {reading && <p role="status">Reading logo…</p>}
+          {error?.source === 'logo' && <p className="form-error" role="alert">{error.message}</p>}
           <div className="link-actions">
-            <button type="button" className="primary-btn workspace-button" disabled={!preview.svg || busy} onClick={() => void exportFile('png')}><Icon name="download" />Download PNG</button>
-            <button type="button" className="secondary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('svg')}>Download SVG</button>
+            {logo && <button type="button" className="secondary-btn" onClick={() => {
+              setLogo(null);
+              setError('');
+              setNotice({ message: 'Logo removed.', source: 'settings' });
+            }}>Remove logo</button>}
+            <button type="button" className="secondary-btn" onClick={reset}>Reset to defaults</button>
           </div>
-          <p className={notice ? 'form-success' : undefined} role="status">{reading ? 'Reading logo…' : exporting ? `Preparing ${exporting.toUpperCase()}…` : notice}</p>
-          {error && <p className="form-error" role="alert">{error}</p>}
-        </section>
-        <section className="dashboard-panel workspace-card qr-settings">
-          <CardHeading icon="settings" title="Customize" />
-          <fieldset disabled={busy}>
-            <ColorControl label="Foreground" value={settings.foreground} onChange={(value) => change('foreground', value)} />
-            <ColorControl label="Background" value={settings.background} onChange={(value) => change('background', value)} />
-            <label>Export size <select value={settings.size} onChange={(event) => change('size', Number(event.target.value))}>
-              {sizes.map((size) => <option key={size} value={size}>{size} × {size} px</option>)}
-            </select></label>
-            <label>Center logo <input type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-hint" onChange={upload} /></label>
-            <p id="logo-hint">PNG, JPEG or WebP. Up to 2 MB and 2048 × 2048 px. Kept in this browser.</p>
-            <div className="link-actions">
-              {logo && <button type="button" className="secondary-btn" onClick={() => {
-                setLogo(null);
-                setError('');
-                setNotice('Logo removed.');
-              }}>Remove logo</button>}
-              <button type="button" className="secondary-btn" onClick={reset}>Reset to defaults</button>
-            </div>
-          </fieldset>
-        </section>
-      </div>
-    </>
+        </fieldset>
+        {notice?.source === 'settings' && <p className="form-success" role="status">{notice.message}</p>}
+      </section>
+      <section className="dashboard-panel workspace-card qr-export" aria-labelledby="qr-export-title">
+        <CardHeading id="qr-export-title" icon="download" title="Download">
+          {settings.size} × {settings.size} px. Test the code at the size you plan to share or print.
+        </CardHeading>
+        <div className="link-actions">
+          <button type="button" className="primary-btn workspace-button" disabled={!preview.svg || busy} onClick={() => void exportFile('png')}>
+            <Icon name="download" /> Download PNG
+          </button>
+          <button type="button" className="secondary-btn workspace-button" disabled={!preview.svg || busy} onClick={() => void exportFile('svg')}>
+            Download SVG
+          </button>
+        </div>
+        <p className={notice?.source === 'export' ? 'form-success' : undefined} role="status">
+          {exporting ? `Preparing ${exporting.toUpperCase()}…` : notice?.source === 'export' && notice.message}
+        </p>
+        {error?.source === 'export' && <p className="form-error" role="alert">{error.message}</p>}
+      </section>
+    </div>
   );
 }

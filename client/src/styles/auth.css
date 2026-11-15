@@ -1,11 +1,11 @@
 .account-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr);
   align-items: stretch;
-  max-width: 59rem;
+  max-width: 62rem;
   margin-block: clamp(2rem, 7vw, 5rem);
   border: 1px solid var(--public-border);
-  border-radius: var(--public-radius);
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 18px 58px #29215a0d;
 }
@@ -15,20 +15,20 @@
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  padding: clamp(1.5rem, 5vw, 3.5rem);
-  border-radius: 0 var(--public-radius) var(--public-radius) 0;
-  border-left: 1px solid #e1dbfa;
+  margin: 8px;
+  padding: clamp(24px, 4.3vw, 56px);
+  border-radius: var(--public-radius);
+  color: white;
   background:
-    radial-gradient(ellipse at 90% 75%, #ddd5ff, transparent 70%),
-    radial-gradient(#c6b9ee 0.7px, transparent 0.7px) center / 16px 16px,
-    #f6f3ff;
+    repeating-radial-gradient(circle at 109% 89%, transparent 0 24px, #ffffff16 25px 26px),
+    linear-gradient(135deg, #4f46e5, #3730a3);
 }
 
-.account-context .brand-mark { width: 2.5rem; border-radius: 10px; }
+.account-context .brand-mark { width: 2.5rem; border-radius: 10px; background: #ffffff21; }
 .account-context h2 { margin: 1.3rem 0 1.5rem; font-size: clamp(1.8rem, 3.7vw, 3.2rem); line-height: 1.08; letter-spacing: -0.065em; }
 .account-context ul { display: grid; gap: .65rem; list-style: none; }
-.account-context li { display: flex; align-items: center; gap: .55rem; color: #3d3659; font-weight: 600; font-size: .87rem; }
-.account-context .product-icon { background: #fff; }
+.account-context li { display: flex; align-items: center; gap: 8px; color: #f5f3ff; font-weight: 600; font-size: .87rem; }
+.account-context .product-icon { background: #ffffff21; color: white; }
 
 .account-form.public-panel {
   width: auto;
@@ -43,7 +43,7 @@
 .account-form h1 { margin-bottom: 0.45rem; font-size: clamp(2rem, 3.7vw, 2.6rem); letter-spacing: -0.056em; }
 .account-form fieldset { gap: 0.85rem; margin: 1.5rem 0 1rem; }
 .account-form label { font-size: .875rem; }
-.account-form input { min-height: 48px; background: #fff; border-radius: 9px; font-size: 1rem; }
+.account-form input { min-height: 48px; background: #fff; border-radius: 10px; font-size: 1rem; }
 .account-form input:hover { border-color: var(--color-primary); }
 .account-form p { color: var(--public-text); }
 .account-password { display: grid; gap: .35rem; }
@@ -70,6 +70,6 @@
 .account-loading { margin-block: 3rem; }
 
 @media (max-width: 680px) {
-  .account-layout { grid-template-columns: minmax(0, 1fr); max-width: 30rem; }
+  .account-layout { grid-template-columns: minmax(0, 1fr); max-width: 30rem; border-radius: var(--bento-radius); }
   .account-context { display: none; }
 }

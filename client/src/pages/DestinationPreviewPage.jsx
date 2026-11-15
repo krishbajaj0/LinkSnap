@@ -28,7 +28,7 @@ function Preview({ code }) {
   }, [code, attempt]);
 
   return (
-    <section className="public-panel safety-card" aria-labelledby="preview-heading">
+    <section className="public-panel safety-card destination-preview" aria-labelledby="preview-heading">
       <span className="safety-icon"><Icon name={unavailable ? 'alert' : 'external'} size={23} /></span>
       <h1 id="preview-heading">Destination preview</h1>
       {!preview && !error && !unavailable && <p role="status">Checking this short link…</p>}
@@ -47,7 +47,7 @@ function Preview({ code }) {
         {preview.needsReview && <div className="safety-warning" role="status">
           <Icon name="alert" /><p>This address has patterns that warrant extra caution.</p>
         </div>}
-        <p>A destination preview cannot verify the safety of an external site or its onward redirects.</p>
+        <p className="safety-disclaimer">Check the hostname before continuing. A preview cannot verify the safety of the site or its onward redirects.</p>
         <a className="primary-btn public-button" href={preview.continuePath} rel="noreferrer" referrerPolicy="no-referrer">
           Continue to destination <Icon name="arrow" />
         </a>

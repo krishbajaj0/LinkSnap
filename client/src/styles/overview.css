@@ -1,18 +1,5 @@
-.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
-  --bento-bg: #f7f8fc;
-  --bento-card: #fff;
-  --bento-primary: var(--color-primary);
-  --bento-accent: var(--color-primary-light);
-  --bento-ink: #111827;
-  --bento-muted: #6b7280;
-  --bento-border: #e5e7f0;
-  --bento-radius: 16px;
-  --bento-gap: 16px;
-  --bento-shadow: 0 2px 4px #11182705, 0 8px 24px #35327005;
-  --bento-transition: 180ms ease;
+.workspace-shell:has(.dashboard-overview) {
   --bento-bot: #a1abd3;
-  background: var(--bento-bg);
-  color: var(--bento-ink);
 }
 
 .workspace-shell:has(.dashboard-overview) .dashboard-header,
@@ -473,11 +460,5 @@
 
   .bento-links .recent-links :is(th, td) {
     padding-inline: 4px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
-    --bento-transition: 0s;
   }
 }

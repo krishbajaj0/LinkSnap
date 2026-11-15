@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useMatch } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import Icon from '../components/dashboard/Icon.jsx';
 import ActionDisclosure from '../components/dashboard/ActionDisclosure.jsx';
@@ -12,11 +12,13 @@ const links = [
   { to: '/dashboard', label: 'Overview', icon: 'overview', end: true },
   { to: '/dashboard/links', label: 'My Links', icon: 'link' },
   { to: '/dashboard/analytics', label: 'Analytics', icon: 'chart' },
+  { to: '/dashboard/links/qr', label: 'QR Studio', icon: 'qr' },
   { to: '/dashboard/settings', label: 'Settings', icon: 'settings', end: true },
 ];
 
 function DashboardShell() {
   const { user, logout } = useAuth();
+  const qrActive = Boolean(useMatch('/dashboard/links/:id?/qr'));
   const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
@@ -68,8 +70,12 @@ function DashboardShell() {
         </header>
         <aside id="dashboard-sidebar" className="dashboard-sidebar" data-open={menuOpen}>
           <nav aria-label="Dashboard navigation">
-            {navigation.map(({ to, label, icon, end }) => (
-              <NavLink key={to} to={to} end={end} onClick={() => setMenuOpen(false)}>
+            {navigation.map(({ to, label, icon, end }) => to === '/dashboard/links/qr' ? (
+              <Link key={to} to={to} aria-current={qrActive ? 'page' : undefined} onClick={() => setMenuOpen(false)}>
+                <Icon name={icon} /> {label}
+              </Link>
+            ) : (
+              <NavLink key={to} to={to} end={end || (qrActive && to === '/dashboard/links')} onClick={() => setMenuOpen(false)}>
                 <Icon name={icon} /> {label}
               </NavLink>
             ))}

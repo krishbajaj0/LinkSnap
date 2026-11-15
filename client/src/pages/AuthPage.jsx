@@ -18,7 +18,7 @@ export default function AuthPage({ mode }) {
   const [error, setError] = useState('');
   const [invalidPassword, setInvalidPassword] = useState(false);
   const requestedPath = location.state?.from;
-  const destination = /^\/dashboard(?:\/(?:links(?:\/[a-f0-9]{24}(?:\/qr)?)?|analytics(?:\/links\/[a-f0-9]{24})?|settings|moderation))?$/.test(requestedPath)
+  const destination = /^\/dashboard(?:\/(?:links(?:\/(?:qr|[a-f0-9]{24}(?:\/qr)?))?|analytics(?:\/links\/[a-f0-9]{24})?|settings|moderation))?$/.test(requestedPath)
     ? requestedPath
     : '/dashboard';
 

@@ -7,7 +7,7 @@ import HowItWorks from '../components/landing/HowItWorks.jsx';
 export default function LandingPage() {
   return (
     <>
-      <div className="landing-opening">
+      <div className="landing-opening public-container">
         <Hero />
         <DashboardPreview />
       </div>
