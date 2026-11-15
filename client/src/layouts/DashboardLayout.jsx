@@ -6,6 +6,7 @@ import ActionDisclosure from '../components/dashboard/ActionDisclosure.jsx';
 import Brand from '../components/landing/Brand.jsx';
 import '../styles/dashboard.css';
 import '../styles/workspace.css';
+import '../styles/bento-workspace.css';
 
 const links = [
   { to: '/dashboard', label: 'Overview', icon: 'overview', end: true },

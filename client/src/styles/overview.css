@@ -1,4 +1,4 @@
-.workspace-shell:has(.dashboard-overview) {
+.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
   --bento-bg: #f7f8fc;
   --bento-card: #fff;
   --bento-primary: var(--color-primary);
@@ -477,7 +477,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace-shell:has(.dashboard-overview) {
+  .workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
     --bento-transition: 0s;
   }
 }
