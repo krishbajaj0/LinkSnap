@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CardHeading } from '../dashboard/WorkspaceUi.jsx';
 
 export default function LinkTags({ tags, pending, onSave }) {
   const [value, setValue] = useState('');
@@ -14,8 +15,8 @@ export default function LinkTags({ tags, pending, onSave }) {
   }
 
   return (
-    <section className="dashboard-panel" aria-labelledby="link-tags-title">
-      <h2 id="link-tags-title">Tags</h2>
+    <section className="dashboard-panel workspace-card" aria-labelledby="link-tags-title">
+      <CardHeading id="link-tags-title" title="Tags" icon="settings" />
       {tags.length === 0 && <p>No tags yet.</p>}
       <ul className="tag-list">
         {tags.map((tag) => (

@@ -2,21 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import ClickTrend from '../components/analytics/ClickTrend.jsx';
+import TopLinks from '../components/analytics/TopLinks.jsx';
+import Icon from '../components/dashboard/Icon.jsx';
+import { EmptyState, LoadingState, MetricCard, PageHeader } from '../components/dashboard/WorkspaceUi.jsx';
 import '../styles/analytics.css';
 
 const breakdownLabels = {
   device: 'Devices', browser: 'Browsers', os: 'Operating systems', country: 'Countries', referrer: 'Referrer domains',
 };
 
-function Metrics({ items }) {
-  return <dl className="kpi-grid">{items.map(([label, value]) => (
-    <div className="kpi-card" key={label}><dt>{label}</dt><dd>{typeof value === 'number' ? value.toLocaleString() : value}</dd></div>
-  ))}</dl>;
-}
-
 function Breakdown({ title, rows, total }) {
   return (
-    <section className="dashboard-panel">
+    <section className="dashboard-panel workspace-card">
       <h2>{title}</h2>
       <ul className="analytics-breakdown">
         {rows.map(({ label, clicks }) => (
@@ -44,6 +41,7 @@ function AnalyticsReport({ id }) {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [exportError, setExportError] = useState('');
+  const [dateError, setDateError] = useState('');
   const endpoint = id ? `/analytics/links/${encodeURIComponent(id)}` : '/analytics';
 
   useEffect(() => {
@@ -67,10 +65,19 @@ function AnalyticsReport({ id }) {
 
   function applyFilters(event) {
     event.preventDefault();
+    const form = event.currentTarget;
     const fields = new URLSearchParams();
-    for (const [key, value] of new FormData(event.currentTarget)) {
+    for (const [key, value] of new FormData(form)) {
       if (value) fields.set(key, value);
     }
+    const fromDate = fields.get('from');
+    const toDate = fields.get('to');
+    if (fromDate && toDate && fromDate > toDate) {
+      setDateError('End date must be on or after the start date.');
+      form.elements.namedItem('to').focus();
+      return;
+    }
+    setDateError('');
     load(fields.toString());
   }
 
@@ -100,24 +107,28 @@ function AnalyticsReport({ id }) {
   const { counts, visitors } = report ?? {};
   const from = report?.range.from.slice(0, 10);
   const through = report && new Date(+new Date(report.range.toExclusive) - 1).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <section className="analytics-page" aria-labelledby="analytics-title">
       {id && <Link className="text-link" to={`/dashboard/links/${id}`}>Back to link details</Link>}
-      <header className="workspace-heading">
-        <div><h1 id="analytics-title">{id ? 'Link analytics' : 'Analytics'}</h1>
-          {report?.shortCode && <p>Short code {report.shortCode}</p>}</div>
-        <button type="button" className="primary-btn" disabled={!report || exporting}
-          onClick={() => void download()}>{exporting ? 'Preparing CSV…' : 'Export CSV'}</button>
-      </header>
-      <form className="dashboard-panel analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters">
+      <PageHeader id="analytics-title" title={id ? 'Link analytics' : 'Analytics'}
+        description={report?.shortCode ? `Short code / ${report.shortCode}` : 'Understand when and how people use your short links.'}>
+        <button type="button" className="secondary-btn workspace-button" disabled={!report || exporting}
+          onClick={() => void download()}><Icon name="download" />{exporting ? 'Preparing CSV…' : 'Export CSV'}</button>
+      </PageHeader>
+      <form className="dashboard-panel workspace-card analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters"
+        onChange={() => { if (dateError) setDateError(''); }}>
+        <h2>Report filters</h2>
         <fieldset disabled={exporting}>
-          <label>From (UTC)<input type="date" name="from" /></label>
-          <label>Through (UTC)<input type="date" name="to" /></label>
+          <label>Start date (UTC)<input type="date" name="from" max={today} aria-describedby="analytics-date-hint" /></label>
+          <label>End date (UTC)<input type="date" name="to" max={today} aria-invalid={Boolean(dateError)}
+            aria-describedby={dateError ? 'analytics-date-error analytics-date-hint' : 'analytics-date-hint'} /></label>
           <label>Interval<select name="interval"><option value="day">Daily</option><option value="hour">Hourly</option></select></label>
           <label>Traffic<select name="traffic"><option value="all">All traffic</option><option value="human">Human estimates</option><option value="bot">Bots only</option></select></label>
           <button type="submit" className="primary-btn">Apply filters</button>
         </fieldset>
-        <p>Daily reports default to 30 days. Hourly reports default to today and support up to 7 days.</p>
+        {dateError && <p id="analytics-date-error" className="form-error" role="alert">{dateError}</p>}
+        <p id="analytics-date-hint" className="workspace-panel-caption">Dates are inclusive. With dates blank, daily shows the last 30 days and hourly shows today. Hourly supports up to 7 days.</p>
       </form>
       {exportStatus && <p className="form-success" role="status">{exportStatus}</p>}
       {exportError && <p className="form-error" role="alert">{exportError}</p>}
@@ -125,49 +136,42 @@ function AnalyticsReport({ id }) {
         <p className="form-error" role="alert">{error}</p>
         <button className="secondary-btn" type="button" onClick={() => load(query)}>Retry analytics</button>
       </div>}
-      {!report && !error && <p className="state-note" role="status">Loading analytics…</p>}
+      {!report && !error && <LoadingState>Loading analytics…</LoadingState>}
       {report && (
         <>
           <h2 className="analytics-section-title">Selected period</h2>
           <p>{from} through {through} (UTC) · {report.range.traffic === 'all' ? 'All traffic' : report.range.traffic === 'bot' ? 'Bots only' : 'Human estimates'}</p>
-          <Metrics items={[
-            ['Recorded clicks', counts.total], ['Estimated human clicks', counts.human],
-            ['Flagged bot clicks', counts.bot], ['Approximate unique visitors', visitors.approximate ?? 'Unavailable'],
-          ]} />
+          <dl className="workspace-metric-grid">
+            <MetricCard icon="chart" label="Recorded clicks" value={counts.total} featured />
+            <MetricCard icon="visitors" label="Estimated human clicks" value={counts.human} />
+            <MetricCard icon="shield" label="Flagged bot clicks" value={counts.bot} />
+            <MetricCard icon="visitors" label="Approximate unique visitors" value={visitors.approximate ?? 'Unavailable'} />
+          </dl>
           <p className="analytics-caption">
             {!visitors.enabled ? 'Visitor identification is disabled on this server.' :
               report.range.traffic === 'bot' ? 'Visitor estimates apply to non-bot traffic.' :
               `Estimate based on ${visitors.identifiedClicks.toLocaleString()} eligible clicks. Daily rotation, shared IPs, and changing networks affect the count.`}
           </p>
-          {counts.total === 0 ? <p className="dashboard-panel">No clicks match these filters.</p> : (
+          {counts.total === 0 ? <div className="dashboard-panel workspace-card">
+            <EmptyState icon="chart" title="No clicks match these filters"><p>Try a different date range or traffic filter.</p></EmptyState>
+          </div> : (
             <>
-              <ClickTrend trends={report.trends} interval={report.range.interval} />
+              <ClickTrend trends={report.trends} interval={report.range.interval} description="Recorded clicks for the selected report period" />
+              {!id && <TopLinks links={report.topLinks} description="Ranked by recorded clicks for the selected period." />}
               <div className="analytics-grid">
                 {Object.entries(breakdownLabels).map(([key, label]) => (
                   <Breakdown key={key} title={label} rows={report.breakdowns[key]} total={counts.total} />
                 ))}
               </div>
-              {!id && report.topLinks.length > 0 && (
-                <section className="dashboard-panel">
-                  <h2>Most clicked links</h2>
-                  <table className="recent-links" aria-label="Most clicked links">
-                    <thead><tr><th scope="col">Short code</th><th scope="col">Recorded clicks</th></tr></thead>
-                    <tbody>{report.topLinks.map((link) => <tr key={link.id}>
-                      <td>{link.deleted ? `${link.shortCode} (deleted)` :
-                        <Link className="text-link" to={`/dashboard/analytics/links/${link.id}`}>{link.shortCode}</Link>}</td>
-                      <td>{link.clicks.toLocaleString()}</td>
-                    </tr>)}</tbody>
-                  </table>
-                </section>
-              )}
             </>
           )}
           <h2 className="analytics-section-title">Lifetime counters</h2>
           <p className="analytics-caption">All dates and traffic types. These counters outlive the 90-day event history and may differ from event totals.</p>
-          <Metrics items={[
-            ['Lifetime clicks', report.lifetime.total], ['Lifetime estimated human clicks', report.lifetime.human],
-            ['Lifetime flagged bot clicks', report.lifetime.bot],
-          ]} />
+          <dl className="workspace-metric-grid lifetime-metric-grid">
+            <MetricCard label="Lifetime clicks" value={report.lifetime.total} />
+            <MetricCard label="Lifetime estimated human clicks" value={report.lifetime.human} />
+            <MetricCard label="Lifetime flagged bot clicks" value={report.lifetime.bot} />
+          </dl>
         </>
       )}
     </section>

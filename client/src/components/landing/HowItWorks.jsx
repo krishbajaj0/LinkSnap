@@ -1,32 +1,23 @@
+const steps = [
+  ['Add a destination', 'Paste the URL you want people to visit.'],
+  ['Set up your short link', 'Pick an alias, set an expiration, or generate a code.'],
+  ['Share and track', 'Copy the link or export a QR code, then check traffic in Analytics.'],
+];
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="how-it-works" tabIndex={-1}>
-      <h2 className="section-title">How It Works</h2>
-
-      <p className="section-description">
-        Get started in three simple steps.
-      </p>
-
-      <div className="steps-grid">
-        <div className="step-card">
-          <span className="step-number">1</span>
-          <h3>Paste Your Link</h3>
-          <p>Enter any long URL that you want to shorten.</p>
-        </div>
-
-        <div className="step-card">
-          <span className="step-number">2</span>
-          <h3>Customize &amp; Create</h3>
-          <p>Add a custom alias, set an expiration, and generate your short link.</p>
-        </div>
-
-        <div className="step-card">
-          <span className="step-number">3</span>
-          <h3>Track &amp; Analyze</h3>
-          <p>Monitor clicks, devices, locations, and more from your dashboard.</p>
-        </div>
-      </div>
+    <section id="how-it-works" className="landing-section landing-steps public-container" tabIndex={-1}
+      aria-labelledby="how-title">
+      <header className="landing-section-heading"><h2 id="how-title">How it works</h2></header>
+      <ol className="step-grid">
+        {steps.map(([title, detail], index) => (
+          <li key={title}>
+            <span aria-hidden="true">0{index + 1}</span>
+            <h3>{title}</h3>
+            <p>{detail}</p>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

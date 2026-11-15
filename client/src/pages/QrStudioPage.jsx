@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth.js';
 import QrStudio from '../components/links/QrStudio.jsx';
 import '../styles/links.css';
 import '../styles/qr.css';
+import { LoadingState, PageHeader } from '../components/dashboard/WorkspaceUi.jsx';
 
 export default function QrStudioPage() {
   const { id } = useParams();
@@ -27,12 +28,12 @@ function OwnedQrStudio({ id }) {
   }, [authorizedApiRequest, id, attempt]);
 
   return (
-    <section className="qr-page" aria-labelledby="qr-heading">
-      <Link className="text-link" to={link ? `/dashboard/links/${link.id}` : '/dashboard/links'}>
+    <section className="qr-page workspace-subpage" aria-labelledby="qr-heading">
+      <Link className="text-link workspace-back" to={link ? `/dashboard/links/${link.id}` : '/dashboard/links'}>
         {link ? 'Back to link details' : 'Back to My Links'}
       </Link>
-      <h1 id="qr-heading">QR Studio</h1>
-      {!link && !error && <p role="status">Loading link…</p>}
+      <PageHeader id="qr-heading" title="QR Studio" description="Customize a scannable QR code for your short link." />
+      {!link && !error && <LoadingState>Loading link…</LoadingState>}
       {error && <>
         <p className="form-error" role="alert">{error}</p>
         <button type="button" className="primary-btn" onClick={() => {

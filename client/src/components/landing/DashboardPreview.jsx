@@ -1,67 +1,47 @@
 import { Link } from 'react-router';
 
+const tools = [
+  ['link', 'Short links', 'Custom aliases'],
+  ['analytics', 'Click analytics', 'Traffic and referrers'],
+  ['qr', 'QR Studio', 'PNG and SVG exports'],
+];
+
 export default function DashboardPreview() {
   return (
-    <section className="preview">
-      <h2 className="section-title">Powerful Dashboard</h2>
-
-      <p className="section-description">
-        Everything you need to manage and analyze your links in one place.
-      </p>
-
-      <div className="preview-container">
-        <div className="preview-window" aria-hidden="true">
-          <div className="preview-topbar">
-            <span className="preview-dot"></span>
-            <span className="preview-dot"></span>
-            <span className="preview-dot"></span>
-            <span className="preview-url">linksnap.app/dashboard</span>
+    <figure id="product-preview" tabIndex={-1} className="product-preview public-container">
+      <div className="product-window" aria-hidden="true">
+        <div className="product-topbar">
+          <span className="product-dots"><i /><i /><i /></span>
+          <span className="product-title">LinkSnap / Dashboard</span>
+        </div>
+        <div className="product-body">
+          <div className="product-sidebar">
+            <div className="product-brand"><span className="brand-mark" /> LinkSnap</div>
+            <span className="product-current">Overview</span>
+            <span>My Links</span>
+            <span>Analytics</span>
+            <span>Settings</span>
           </div>
-          <div className="preview-body">
-            {/* Static CSS-only mockup of dashboard layout */}
-            <div className="mockup-sidebar">
-              <div className="mockup-sidebar-item active"></div>
-              <div className="mockup-sidebar-item"></div>
-              <div className="mockup-sidebar-item"></div>
-              <div className="mockup-sidebar-item"></div>
+          <div className="product-content">
+            <div className="product-heading"><strong>Dashboard</strong><span>+ Create link</span></div>
+            <div className="product-tools">
+              {tools.map(([icon, title, detail]) => (
+                <div key={icon}>
+                  <span className={`product-icon icon-${icon}`} />
+                  <strong>{title}</strong>
+                  <small>{detail}</small>
+                </div>
+              ))}
             </div>
-            <div className="mockup-main">
-              <div className="mockup-kpi-row">
-                <div className="mockup-kpi">
-                  <div className="mockup-kpi-label"></div>
-                  <div className="mockup-kpi-value"></div>
-                </div>
-                <div className="mockup-kpi">
-                  <div className="mockup-kpi-label"></div>
-                  <div className="mockup-kpi-value"></div>
-                </div>
-                <div className="mockup-kpi">
-                  <div className="mockup-kpi-label"></div>
-                  <div className="mockup-kpi-value"></div>
-                </div>
-              </div>
-              <div className="mockup-chart">
-                <div className="mockup-bar" style={{ height: '40%' }}></div>
-                <div className="mockup-bar" style={{ height: '65%' }}></div>
-                <div className="mockup-bar" style={{ height: '85%' }}></div>
-                <div className="mockup-bar" style={{ height: '55%' }}></div>
-                <div className="mockup-bar" style={{ height: '70%' }}></div>
-                <div className="mockup-bar" style={{ height: '90%' }}></div>
-                <div className="mockup-bar" style={{ height: '50%' }}></div>
-              </div>
-              <div className="mockup-table">
-                <div className="mockup-table-row header"></div>
-                <div className="mockup-table-row"></div>
-                <div className="mockup-table-row"></div>
-                <div className="mockup-table-row"></div>
-              </div>
+            <div className="product-sample">
+              <span className="product-icon icon-link" />
+              <div><strong>/product-guide</strong><small>example.com/resources/product-guide</small></div>
+              <span className="product-tag">Sample link</span>
             </div>
           </div>
         </div>
-        <p className="preview-note">
-          <Link className="text-link" to="/dashboard">Explore the dashboard preview</Link>
-        </p>
       </div>
-    </section>
+      <figcaption><span>Illustrated product preview</span><Link className="text-link" to="/dashboard">Open dashboard <span aria-hidden="true">↗</span></Link></figcaption>
+    </figure>
   );
 }

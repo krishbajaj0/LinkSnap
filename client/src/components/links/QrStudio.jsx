@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { defaults, downloadQr, makeQrSvg, pngBlob, readLogo, sizes, svgBlob } from '../../services/qr.js';
 import { buildQrUrl } from '../../services/qrUrl.js';
 import ShortLink from './ShortLink.jsx';
+import Icon from '../dashboard/Icon.jsx';
+import { CardHeading, StatusBadge } from '../dashboard/WorkspaceUi.jsx';
 
 function ColorControl({ label, value, onChange }) {
   const pickerValue = /^#[0-9a-f]{6}$/i.test(value) ? value : '#000000';
@@ -98,22 +100,39 @@ export default function QrStudio({ link }) {
 
   return (
     <>
-      <section className="dashboard-panel qr-url">
-        <h2>Encoded short URL</h2>
+      <section className="dashboard-panel workspace-card qr-url">
+        <div className="qr-url-heading">
+          <CardHeading icon="link" title="Encoded short URL" />
+          <StatusBadge status={link.status} />
+        </div>
         <ShortLink path={link.shortPath} url={target.url} />
         {import.meta.env.DEV && !import.meta.env.VITE_PUBLIC_BASE_URL?.trim() && (
           <p>This QR code is for local testing and uses this computer’s loopback address.</p>
         )}
         {link.status !== 'active' && <p>This link is {link.status} and currently does not redirect.</p>}
-        <p>Scan with a camera to open the short URL. A QR code does not verify destination safety.</p>
       </section>
       <div className="qr-grid">
-        <section className="dashboard-panel qr-settings">
-          <h2>Customize</h2>
+        <section className="dashboard-panel workspace-card qr-preview" aria-busy={busy}>
+          <CardHeading icon="qr" title="Live preview" />
+          <div className="qr-canvas">
+            {preview.src && <img className="qr-image" src={preview.src} width={settings.size} height={settings.size}
+              alt={`QR code for ${target.url}`} />}
+            {preview.error && <p className="form-error" role="alert">{preview.error}</p>}
+          </div>
+          <p className="workspace-panel-caption">Test the code at the size you plan to share or print.</p>
+          <div className="link-actions">
+            <button type="button" className="primary-btn workspace-button" disabled={!preview.svg || busy} onClick={() => void exportFile('png')}><Icon name="download" />Download PNG</button>
+            <button type="button" className="secondary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('svg')}>Download SVG</button>
+          </div>
+          <p className={notice ? 'form-success' : undefined} role="status">{reading ? 'Reading logo…' : exporting ? `Preparing ${exporting.toUpperCase()}…` : notice}</p>
+          {error && <p className="form-error" role="alert">{error}</p>}
+        </section>
+        <section className="dashboard-panel workspace-card qr-settings">
+          <CardHeading icon="settings" title="Customize" />
           <fieldset disabled={busy}>
             <ColorControl label="Foreground" value={settings.foreground} onChange={(value) => change('foreground', value)} />
             <ColorControl label="Background" value={settings.background} onChange={(value) => change('background', value)} />
-            <label>Size <select value={settings.size} onChange={(event) => change('size', Number(event.target.value))}>
+            <label>Export size <select value={settings.size} onChange={(event) => change('size', Number(event.target.value))}>
               {sizes.map((size) => <option key={size} value={size}>{size} × {size} px</option>)}
             </select></label>
             <label>Center logo <input type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="logo-hint" onChange={upload} /></label>
@@ -127,18 +146,6 @@ export default function QrStudio({ link }) {
               <button type="button" className="secondary-btn" onClick={reset}>Reset to defaults</button>
             </div>
           </fieldset>
-        </section>
-        <section className="dashboard-panel qr-preview" aria-busy={busy}>
-          <h2>Live preview</h2>
-          {preview.src && <img className="qr-image" src={preview.src} width={settings.size} height={settings.size}
-            alt={`QR code for ${target.url}`} />}
-          {preview.error && <p className="form-error" role="alert">{preview.error}</p>}
-          <div className="link-actions">
-            <button type="button" className="primary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('png')}>Download PNG</button>
-            <button type="button" className="primary-btn" disabled={!preview.svg || busy} onClick={() => void exportFile('svg')}>Download SVG</button>
-          </div>
-          <p className={notice ? 'form-success' : undefined} role="status">{reading ? 'Reading logo…' : exporting ? `Preparing ${exporting.toUpperCase()}…` : notice}</p>
-          {error && <p className="form-error" role="alert">{error}</p>}
         </section>
       </div>
     </>
