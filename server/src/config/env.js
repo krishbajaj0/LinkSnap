@@ -57,6 +57,20 @@ export function readConfig(env = process.env) {
   if (trustedProxyIps.some((ip) => !isIP(ip) || ip.includes('%') || /^::ffff:/i.test(ip))) {
     throw new Error('TRUSTED_PROXY_IPS must contain exact IPv4 or IPv6 addresses.');
   }
+  const renderEdge = env.TRUST_RENDER_EDGE ?? 'false';
+  if (!['true', 'false'].includes(renderEdge)) {
+    throw new Error('TRUST_RENDER_EDGE must be true or false.');
+  }
+  const trustRenderEdge = renderEdge === 'true';
+  if (trustRenderEdge && (environment !== 'production' || env.RENDER !== 'true' || env.RENDER_SERVICE_TYPE !== 'web')) {
+    throw new Error('TRUST_RENDER_EDGE requires a production Render web service.');
+  }
+  if (trustRenderEdge && trustedProxyIps.length) {
+    throw new Error('TRUST_RENDER_EDGE and TRUSTED_PROXY_IPS cannot be used together.');
+  }
   const prohibitedDomains = readProhibitedDomains(env.PROHIBITED_LINK_DOMAINS);
-  return { environment, host, port, mongoUri, clientOrigins, authSecret, visitorSecret, geoIpPath, trustedProxyIps, prohibitedDomains };
+  return {
+    environment, host, port, mongoUri, clientOrigins, authSecret, visitorSecret, geoIpPath,
+    trustedProxyIps, trustRenderEdge, prohibitedDomains,
+  };
 }
