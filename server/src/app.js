@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import cors from 'cors';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
@@ -18,7 +19,23 @@ export function createApp(config, {
   checkDatabase = isMongoReady, generateCode, recordClick = createClickRecorder(config), frontendDirectory,
 } = {}) {
   const app = express();
-  if (config.trustedProxyIps?.length) app.set('trust proxy', config.trustedProxyIps);
+  if (config.trustRenderEdge) {
+    // Render's public edge overwrites CF-Connecting-IP. The operator must ensure every
+    // public request passes through that edge and there is no direct or private ingress.
+    app.set('trust proxy', 1);
+    app.use((request, _response, next) => {
+      const clientIp = request.get('CF-Connecting-IP');
+      for (const name of ['forwarded', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto']) {
+        delete request.headers[name];
+      }
+      if (clientIp && !clientIp.includes('%') && isIP(clientIp)) {
+        request.headers['x-forwarded-for'] = clientIp;
+      }
+      next();
+    });
+  } else if (config.trustedProxyIps?.length) {
+    app.set('trust proxy', config.trustedProxyIps);
+  }
   app.disable('x-powered-by');
   app.use(helmet(config.environment === 'production' ? {
     contentSecurityPolicy: {
