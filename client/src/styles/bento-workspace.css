@@ -1,0 +1,339 @@
+.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)),
+.public-layout {
+  --bento-bg: #f7f8fc;
+  --bento-card: #fff;
+  --bento-primary: var(--color-primary);
+  --bento-accent: var(--color-primary-light);
+  --bento-ink: #111827;
+  --bento-muted: #6b7280;
+  --bento-border: #e5e7f0;
+  --bento-radius: 16px;
+  --bento-gap: 16px;
+  --bento-shadow: 0 2px 4px #11182705, 0 8px 24px #35327005;
+  --bento-transition: 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell:has(:is(.dashboard-overview, .bento-workspace)),
+  .public-layout {
+    --bento-transition: 0s;
+  }
+}
+
+.workspace-shell:has(:is(.dashboard-overview, .bento-workspace)) {
+  background: var(--bento-bg);
+  color: var(--bento-ink);
+}
+
+.workspace-shell:has(.bento-workspace) .dashboard-sidebar a {
+  border-radius: 12px;
+  transition: background-color var(--bento-transition), color var(--bento-transition);
+}
+
+.workspace-shell:has(.bento-workspace) .dashboard-sidebar a[aria-current='page'] {
+  background: var(--bento-accent);
+}
+
+.bento-workspace {
+  overflow-wrap: anywhere;
+}
+
+.bento-workspace .stage-page-header {
+  gap: 12px 20px;
+  margin-bottom: 24px;
+}
+
+.dashboard-main .bento-workspace .stage-page-header h1 {
+  color: var(--bento-ink);
+  font-size: clamp(1.8rem, 3.4vw, 2.65rem);
+  letter-spacing: -.055em;
+}
+
+.bento-header-actions,
+.bento-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.bento-count {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bento-accent);
+  color: var(--color-primary-hover);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.bento-workspace .dashboard-panel.workspace-card,
+.bento-workspace .workspace-metric {
+  max-width: none;
+  padding: clamp(16px, 2vw, 24px);
+  border-color: var(--bento-border);
+  border-radius: var(--bento-radius);
+  background-color: var(--bento-card);
+  box-shadow: var(--bento-shadow);
+}
+
+.bento-workspace .workspace-card :is(h2, h3) {
+  color: var(--bento-ink);
+  font-size: 1.06rem;
+  line-height: 1.35;
+  letter-spacing: -.025em;
+}
+
+.bento-workspace :is(.stage-page-header p, .workspace-panel-caption, .workspace-chart-heading p) {
+  color: var(--bento-muted);
+}
+
+.bento-workspace .workspace-icon {
+  color: var(--bento-primary);
+  background: var(--bento-accent);
+}
+
+.bento-workspace .workspace-button,
+.bento-workspace .analytics-filters button,
+.bento-workspace .workspace-search button {
+  border-radius: 10px;
+}
+
+.bento-workspace .primary-btn.workspace-button {
+  box-shadow: 0 4px 8px #4f46e526;
+  transition: background-color var(--bento-transition), box-shadow var(--bento-transition);
+}
+
+.bento-workspace .primary-btn.workspace-button:hover:not(:disabled) {
+  box-shadow: 0 6px 14px #4f46e53b;
+}
+
+.bento-section-heading {
+  margin: 24px 0 12px;
+}
+
+.bento-section-heading h2 {
+  font-size: 1.15rem;
+  letter-spacing: -.03em;
+}
+
+.bento-section-heading p {
+  color: var(--bento-muted);
+  font-size: .85rem;
+}
+
+.bento-workspace .workspace-metric dt {
+  color: var(--bento-muted);
+}
+
+.bento-workspace .workspace-metric[data-featured] {
+  border-color: #4338ca;
+  background-image: linear-gradient(135deg, var(--bento-primary), #3730a3);
+  color: #fff;
+  box-shadow: 0 8px 20px #3730a326;
+}
+
+.bento-workspace .workspace-metric[data-featured] dt {
+  color: var(--bento-accent);
+}
+
+.bento-workspace .workspace-metric[data-featured] .workspace-icon {
+  background: #ffffff24;
+  color: #fff;
+}
+
+.bento-workspace .workspace-metric[data-featured] dd {
+  font-size: clamp(1.9rem, 4vw, 2.55rem);
+}
+
+.bento-workspace .workspace-trend {
+  min-width: 0;
+}
+
+.bento-workspace .workspace-trend .analytics-chart {
+  height: clamp(190px, 24vw, 270px);
+  margin-block: 16px 8px;
+}
+
+.bento-workspace .workspace-chart-legend {
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--bento-accent);
+  color: var(--color-primary-hover);
+}
+
+.bento-workspace .trend-data summary:focus-visible {
+  outline: 2px solid var(--bento-primary);
+  outline-offset: 2px;
+}
+
+.bento-period-metrics,
+.bento-lifetime-metrics,
+.bento-analytics-chart,
+.bento-detail-performance,
+.bento-link-metrics,
+.bento-breakdowns {
+  display: grid;
+  gap: var(--bento-gap);
+  min-width: 0;
+}
+
+.bento-period-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.bento-period-metrics .workspace-metric dt,
+.bento-link-metrics .workspace-metric dt {
+  display: flex;
+  align-items: center;
+}
+
+.bento-period-metrics .workspace-icon,
+.bento-link-metrics .workspace-icon {
+  flex: 0 0 2.15rem;
+}
+
+.bento-analytics-chart[data-top-links] {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.analytics-page.bento-workspace .bento-analytics-chart > .workspace-card {
+  margin: 0;
+}
+
+.bento-analytics-chart .top-links .recent-links :is(th, td) {
+  padding-inline: 8px;
+}
+
+.bento-breakdowns {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.bento-workspace .bento-breakdowns > .workspace-card {
+  grid-column: span 2;
+  margin: 0;
+}
+
+.bento-workspace .bento-breakdowns > .workspace-card:nth-last-child(-n+2) {
+  grid-column: span 3;
+}
+
+.bento-breakdown-list {
+  margin-top: 12px;
+  list-style: none;
+  font-size: .83rem;
+}
+
+.bento-breakdown-list li + li {
+  margin-top: 8px;
+}
+
+.bento-breakdown-list li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bento-breakdown-list meter {
+  width: 100%;
+  height: .65rem;
+  display: block;
+  accent-color: var(--bento-primary);
+}
+
+.bento-breakdown-list meter::-webkit-meter-bar {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bento-accent);
+}
+
+.bento-breakdown-list meter::-webkit-meter-optimum-value {
+  border-radius: inherit;
+  background: var(--bento-primary);
+}
+
+.bento-lifetime {
+  margin-top: 24px;
+}
+
+.bento-lifetime-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.bento-workspace .bento-lifetime-metrics .workspace-metric {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bento-bg);
+  box-shadow: none;
+}
+
+.bento-detail-performance {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr);
+  margin-bottom: var(--bento-gap);
+}
+
+.bento-workspace .bento-empty-chart {
+  display: grid;
+  align-content: start;
+}
+
+.bento-workspace .bento-empty-chart .workspace-empty {
+  align-self: center;
+}
+
+@media (max-width: 1080px) {
+  .bento-period-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 940px) {
+  .bento-analytics-chart[data-top-links] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bento-workspace .bento-breakdowns > .workspace-card:nth-child(n) {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 660px) {
+  .bento-workspace .stage-page-header {
+    margin-bottom: 16px;
+  }
+
+  .bento-detail-performance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bento-link-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace-shell:has(.bento-workspace) {
+    --bento-gap: 12px;
+  }
+
+  .workspace-shell:has(.bento-workspace) .dashboard-main {
+    padding-inline: 16px;
+  }
+
+  .bento-period-metrics .workspace-metric dt,
+  .bento-link-metrics .workspace-metric dt {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bento-workspace .bento-breakdowns > .workspace-card:nth-child(n) {
+    grid-column: 1 / -1;
+  }
+
+  .bento-lifetime-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,11 +1,5 @@
 import { Link } from 'react-router';
 
-const tools = [
-  ['link', 'Short links', 'Custom aliases'],
-  ['analytics', 'Click analytics', 'Traffic and referrers'],
-  ['qr', 'QR Studio', 'PNG and SVG exports'],
-];
-
 export default function DashboardPreview() {
   return (
     <figure id="product-preview" tabIndex={-1} className="product-preview public-container">
@@ -20,18 +14,26 @@ export default function DashboardPreview() {
             <span className="product-current">Overview</span>
             <span>My Links</span>
             <span>Analytics</span>
+            <span>QR Studio</span>
             <span>Settings</span>
           </div>
           <div className="product-content">
-            <div className="product-heading"><strong>Dashboard</strong><span>+ Create link</span></div>
+            <div className="product-heading"><strong>Dashboard overview</strong></div>
             <div className="product-tools">
-              {tools.map(([icon, title, detail]) => (
-                <div key={icon}>
-                  <span className={`product-icon icon-${icon}`} />
-                  <strong>{title}</strong>
-                  <small>{detail}</small>
-                </div>
-              ))}
+              <div className="product-featured">
+                <span className="product-icon icon-analytics" />
+                <strong>Recorded clicks</strong>
+                <small>Lifetime total</small>
+              </div>
+              <div>
+                <span className="product-icon icon-qr" />
+                <strong>QR Studio</strong>
+                <small>PNG and SVG</small>
+              </div>
+            </div>
+            <div className="product-activity">
+              <strong>Click activity</strong>
+              <small>No sample traffic</small>
             </div>
             <div className="product-sample">
               <span className="product-icon icon-link" />
@@ -41,7 +43,7 @@ export default function DashboardPreview() {
           </div>
         </div>
       </div>
-      <figcaption><span>Illustrated product preview</span><Link className="text-link" to="/dashboard">Open dashboard <span aria-hidden="true">↗</span></Link></figcaption>
+      <figcaption><span>Illustrated dashboard preview</span><Link className="text-link" to="/dashboard">Open dashboard <span aria-hidden="true">↗</span></Link></figcaption>
     </figure>
   );
 }

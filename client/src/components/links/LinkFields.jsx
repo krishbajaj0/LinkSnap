@@ -51,7 +51,7 @@ export default function LinkFields({ link, pending, onSave }) {
           <div className="link-field">
             <label>
               Custom alias (optional)
-              <input pattern="[a-z0-9\\-]{4,32}" maxLength={32} value={alias} aria-describedby="alias-hint"
+              <input pattern="[a-z0-9\-]{4,32}" maxLength={32} value={alias} aria-describedby="alias-hint"
                 onChange={(event) => setAlias(event.target.value)} />
             </label>
             <small id="alias-hint">Use 4–32 lowercase letters, digits or hyphens.</small>

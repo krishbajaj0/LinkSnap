@@ -1,18 +1,28 @@
 .links-page.link-details-page .dashboard-panel { max-width: none; margin: 0; }
 .link-detail-summary-heading, .link-detail-badges { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; }
 .link-detail-summary-heading { justify-content: space-between; }
-.link-detail-meta { display: grid; gap: .7rem; margin: 1rem 0; padding: .8rem; border-radius: 8px; background: #f7f7fb; font-size: .88rem; }
-.link-detail-meta dt { color: var(--workspace-muted); }
+.link-detail-meta { display: grid; gap: 12px; margin: 16px 0; font-size: .88rem; }
+.link-detail-meta > div { min-width: 0; }
+.link-detail-meta dt { color: var(--bento-muted); }
 .link-detail-meta dd { font-weight: 600; }
-.link-detail-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.link-detail-counts dd { margin-top: .25rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
-.link-detail-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: 1rem; }
-.link-detail-side { display: grid; gap: 1rem; min-width: 0; }
-.link-detail-summary .short-link { justify-content: space-between; }
+.link-detail-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: var(--bento-gap); }
+.bento-short-url { margin-top: 16px; padding: 12px 16px; border: 1px solid var(--bento-accent); border-radius: 12px; background: var(--bento-bg); }
+.link-detail-summary .short-link { justify-content: space-between; gap: 4px 12px; margin-top: 0; }
+.link-detail-summary .short-link a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+.link-detail-summary .short-link button { border-radius: 10px; }
 .link-detail-summary .short-link [role="status"]:not(:empty) { flex-basis: 100%; }
 .link-detail-summary .short-link [role="status"]:empty { position: absolute; }
+.link-detail-summary .link-actions { gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--bento-border); }
+.link-detail-summary .link-actions .text-link { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 8px; font-size: .86rem; }
+.link-detail-summary .link-actions button { border-radius: 10px; }
 .link-detail-delete { color: #991b1b; }
 .link-details-page > :is(.form-success, .form-error) { margin-block: .6rem 1rem; }
+.link-details-page .link-tag-form { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; margin-top: 12px; }
+.link-details-page button.tag-pill { min-height: 44px; }
+.link-details-page .bento-edit-link { margin-top: 24px; scroll-margin-top: 16px; }
+.link-details-page .bento-edit-link .auth-panel { margin-top: 16px; }
+.link-details-page .bento-edit-link:focus-visible { outline: 2px solid var(--bento-primary); outline-offset: 4px; }
+
 @media (max-width: 940px) {
   .link-detail-grid { grid-template-columns: minmax(0, 1fr); }
 }

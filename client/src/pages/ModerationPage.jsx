@@ -53,11 +53,14 @@ function ModerationQueue() {
   }
 
   return (
-    <section className="moderation-page workspace-subpage" aria-labelledby="moderation-heading">
+    <section className="moderation-page workspace-subpage bento-workspace" aria-labelledby="moderation-heading">
       <PageHeader id="moderation-heading" title="Moderation" description="Review abuse reports and flagged links." />
       <div className="moderation-workbench">
-        <section className="dashboard-panel workspace-card moderation-queue">
-          <CardHeading title="Moderation queue" icon="shield" />
+        <section className="dashboard-panel workspace-card moderation-queue" aria-labelledby="moderation-queue-title">
+          <div className="moderation-queue-heading">
+            <CardHeading id="moderation-queue-title" title="Moderation queue" icon="shield" />
+            {items && <span className="bento-count" role="status">{items.total.toLocaleString()} {items.total === 1 ? 'result' : 'results'}</span>}
+          </div>
           <div className="moderation-filters moderation-form">
             <label>Queue<select value={kind} onChange={(event) => {
               const value = event.target.value;

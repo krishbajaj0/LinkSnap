@@ -40,7 +40,7 @@ function ReportForm({ code }) {
   }
 
   return (
-    <section className="public-panel safety-card" aria-labelledby="report-heading">
+    <section className="public-panel safety-card report-card" aria-labelledby="report-heading">
       <span className="safety-icon"><Icon name="shield" size={23} /></span>
       <h1 id="report-heading">Report a short link</h1>
       <p>Send an anonymous report for review. Leave out passwords and personal details.</p>
@@ -50,9 +50,9 @@ function ReportForm({ code }) {
           <fieldset disabled={pending}>
             <label>Short code (required)<input name="shortCode" required minLength={4} maxLength={32}
               defaultValue={code} autoCapitalize="none" spellCheck={false}
-              aria-describedby={error?.fields ? 'report-form-error' : undefined} /></label>
+              aria-invalid={error?.fields || undefined} aria-describedby={error?.fields ? 'report-form-error' : undefined} /></label>
             <label>Reason (required)<select name="reason" required defaultValue=""
-              aria-describedby={error?.fields ? 'report-form-error' : undefined}>
+              aria-invalid={error?.fields || undefined} aria-describedby={error?.fields ? 'report-form-error' : undefined}>
               <option value="" disabled>Choose a reason</option>
               {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select></label>

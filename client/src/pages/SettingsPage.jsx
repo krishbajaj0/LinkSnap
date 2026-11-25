@@ -94,10 +94,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <section className="settings-page workspace-subpage" aria-labelledby="settings-title">
+    <section className="settings-page workspace-subpage bento-workspace" aria-labelledby="settings-title">
       <PageHeader id="settings-title" title="Settings" description="Manage your profile, password and sign-ins." />
       <div className="settings-grid">
-        <section className="dashboard-panel workspace-card auth-panel" aria-labelledby="profile-heading">
+        <section className="dashboard-panel workspace-card auth-panel settings-profile" aria-labelledby="profile-heading">
           <CardHeading id="profile-heading" title="Profile" icon="visitors">Your display name and account email.</CardHeading>
           {!profile && !profileError && <LoadingState>Loading your profile…</LoadingState>}
           {profileError && <p id="profile-error" className="form-error" role="alert">{profileError}</p>}
@@ -125,7 +125,7 @@ export default function SettingsPage() {
           )}
           {profileNotice && <p className="form-success" role="status">{profileNotice}</p>}
         </section>
-        <section className="dashboard-panel workspace-card auth-panel" aria-labelledby="password-heading">
+        <section className="dashboard-panel workspace-card auth-panel settings-password" aria-labelledby="password-heading">
           <CardHeading id="password-heading" title="Password & security" icon="shield">
             Changing your password signs you out on all devices.
           </CardHeading>
@@ -158,11 +158,11 @@ export default function SettingsPage() {
             Log out of this browser, or revoke your sessions on every device.
           </CardHeading>
           {sessionError && <p className="form-error" role="alert">{sessionError}</p>}
-          <div className="action-group">
+          <div className="action-group settings-session-actions">
             <button className="secondary-btn" type="button" disabled={Boolean(pending)} onClick={() => signOut()}>
               {pending === 'logout' ? 'Logging out…' : 'Log out'}
             </button>
-            <button ref={sessionsTrigger} className="secondary-btn" type="button" disabled={Boolean(pending)}
+            <button ref={sessionsTrigger} className="secondary-btn settings-logout-all" type="button" disabled={Boolean(pending)}
               onClick={() => sessionsDialog.current.showModal()}>
               {pending === 'all' ? 'Logging out on all devices…' : 'Log out on all devices'}
             </button>

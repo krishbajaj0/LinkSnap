@@ -24,7 +24,7 @@ export default function LinksTable({ rows, selected, disabled, onSelect, onSelec
               checked={selected.includes(link.id)} onChange={(event) => onSelect(link.id, event.target.checked)} />
           </label></td>
           <td className="workspace-link-info">
-            <Link to={link.id}>{link.shortCode}</Link>
+            <Link to={link.id}><span className="bento-link-icon"><Icon name="link" size={15} /></span>{link.shortCode}</Link>
             <p className="workspace-destination" title={link.destination}>{link.destination}</p>
             {link.tags.length > 0 && <ul className="tag-list" aria-label="Tags">
               {link.tags.map((tag) => <li className="tag-pill" key={tag}>{tag}</li>)}
@@ -40,7 +40,7 @@ export default function LinksTable({ rows, selected, disabled, onSelect, onSelec
                 <Icon name="external" />Open short URL<span className="workspace-sr-only"> (new tab)</span>
               </a>
               <Link to={link.id}><Icon name="link" />Link details</Link>
-              <Link to={`${link.id}/qr`}><Icon name="arrow" />QR Studio</Link>
+              <Link to={`${link.id}/qr`}><Icon name="qr" />QR Studio</Link>
             </ActionDisclosure>
           </td>
         </tr>

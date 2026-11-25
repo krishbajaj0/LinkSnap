@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import LinkFields from '../components/links/LinkFields.jsx';
@@ -31,6 +31,7 @@ export default function LinksPage() {
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(null);
   const [formVersion, setFormVersion] = useState(0);
+  const resultsHeading = useRef(null);
 
   useEffect(() => {
     const request = new AbortController();
@@ -53,10 +54,18 @@ export default function LinksPage() {
 
   function applyFilters(values, resetForm = false) {
     setFilters(values);
-    if (resetForm) setFilterVersion((value) => value + 1);
+    if (resetForm) {
+      setFilterVersion((value) => value + 1);
+      resultsHeading.current?.focus();
+    }
     setBulkMessage('');
     setBulkError('');
     load(1);
+  }
+
+  function changePage(nextPage) {
+    load(nextPage);
+    resultsHeading.current?.focus();
   }
 
   async function copy(path) {
@@ -79,7 +88,7 @@ export default function LinksPage() {
         method: 'POST', body: { action, ids: selected, ...(tag !== undefined && { tag }) },
       });
       setBulkMessage(`${changed} changed. ${skipped} skipped.`);
-      load(page);
+      changePage(page);
     } catch (failure) {
       setBulkError(failure.status ? failure.message : 'Could not complete the bulk action.');
     } finally {
@@ -100,23 +109,27 @@ export default function LinksPage() {
     }
   }
 
+  const isFiltered = filters.search || filters.status || filters.tag || filters.createdFrom || filters.createdTo;
+
   return (
-    <section className="links-page workspace-links" aria-labelledby="links-title">
+    <section className="links-page workspace-links bento-workspace" aria-labelledby="links-title">
       <PageHeader id="links-title" title="My Links" description="Create, organize, and manage your short links.">
-        <Link className="primary-btn workspace-button" to="#create-link"><Icon name="plus" /> Create link</Link>
+        <div className="bento-header-actions">
+          {list && <span className="bento-count" role="status">
+            {list.total.toLocaleString()} {isFiltered ? 'matching ' : ''}{list.total === 1 ? 'link' : 'links'}
+          </span>}
+          <Link className="primary-btn workspace-button" to="#create-link"><Icon name="plus" /> Create link</Link>
+        </div>
       </PageHeader>
       <section className="dashboard-panel workspace-card link-results" aria-labelledby="links-table-title">
-        <div className="workspace-table-heading">
-          <h2 id="links-table-title">Your links</h2>
-          {list && <p>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}</p>}
-        </div>
+        <h2 id="links-table-title" ref={resultsHeading} tabIndex={-1}>Link library</h2>
         <LinkFilters key={filterVersion} filters={filters} defaults={defaultFilters} onApply={applyFilters} disabled={bulkPending} />
         {bulkMessage && <p className="bulk-result" role="status">{bulkMessage}</p>}
         {copyStatus && <p className="bulk-result" role="status">{copyStatus}</p>}
         {bulkError && <p className="form-error" role="alert">{bulkError}</p>}
         {error && <div className="workspace-error">
           <p role="alert">{error}</p>
-          <button className="secondary-btn" type="button" onClick={() => load(page)}>Try again</button>
+          <button className="secondary-btn" type="button" onClick={() => changePage(page)}>Try again</button>
         </div>}
         {!list && !error && <LoadingState>Loading links…</LoadingState>}
         {list && (
@@ -128,7 +141,10 @@ export default function LinksPage() {
               </EmptyState>
             )}
             {selected.length > 0 && <BulkActions count={selected.length} pending={bulkPending}
-              onClear={() => setSelected([])} onApply={applyBulk} />}
+              onClear={() => {
+                setSelected([]);
+                resultsHeading.current?.focus();
+              }} onApply={applyBulk} />}
             {list.links.length > 0 && <LinksTable rows={list.links} selected={selected} disabled={bulkPending}
               onSelect={(id, checked) => setSelected((current) => checked ? [...current, id] : current.filter((item) => item !== id))}
               onSelectAll={(checked) => setSelected(checked ? list.links.map((link) => link.id) : [])} onCopy={copy} />}
@@ -136,9 +152,9 @@ export default function LinksPage() {
               <nav className="workspace-pagination" aria-label="Link pages">
                 <span>Page {page} of {Math.max(page, Math.min(1000, Math.ceil(list.total / list.limit)))}</span>
                 <div>
-                  <button className="secondary-btn" type="button" disabled={bulkPending || page === 1} onClick={() => load(page - 1)}>Previous</button>
+                  <button className="secondary-btn" type="button" disabled={bulkPending || page === 1} onClick={() => changePage(page - 1)}>Previous</button>
                   <button className="secondary-btn" type="button" disabled={bulkPending || page * list.limit >= list.total || page >= 1000}
-                    onClick={() => load(page + 1)}>Next</button>
+                    onClick={() => changePage(page + 1)}>Next</button>
                 </div>
               </nav>
             )}

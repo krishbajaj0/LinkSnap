@@ -3,29 +3,10 @@ import { Link, useParams } from 'react-router';
 import { useAuth } from '../auth/useAuth.js';
 import ClickTrend from '../components/analytics/ClickTrend.jsx';
 import TopLinks from '../components/analytics/TopLinks.jsx';
+import BreakdownGrid from '../components/analytics/BreakdownGrid.jsx';
 import Icon from '../components/dashboard/Icon.jsx';
 import { EmptyState, LoadingState, MetricCard, PageHeader } from '../components/dashboard/WorkspaceUi.jsx';
 import '../styles/analytics.css';
-
-const breakdownLabels = {
-  device: 'Devices', browser: 'Browsers', os: 'Operating systems', country: 'Countries', referrer: 'Referrer domains',
-};
-
-function Breakdown({ title, rows, total }) {
-  return (
-    <section className="dashboard-panel workspace-card">
-      <h2>{title}</h2>
-      <ul className="analytics-breakdown">
-        {rows.map(({ label, clicks }) => (
-          <li key={label}>
-            <div><span>{label}</span><strong>{clicks.toLocaleString()}</strong></div>
-            <meter min="0" max={total} value={clicks} aria-label={`${label} click share`} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 export default function AnalyticsPage() {
   const { id } = useParams();
@@ -109,11 +90,11 @@ function AnalyticsReport({ id }) {
   const through = report && new Date(+new Date(report.range.toExclusive) - 1).toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
   return (
-    <section className="analytics-page" aria-labelledby="analytics-title">
-      {id && <Link className="text-link" to={`/dashboard/links/${id}`}>Back to link details</Link>}
+    <section className="analytics-page bento-workspace" aria-labelledby="analytics-title">
+      {id && <Link className="text-link workspace-back" to={`/dashboard/links/${id}`}>Back to link details</Link>}
       <PageHeader id="analytics-title" title={id ? 'Link analytics' : 'Analytics'}
         description={report?.shortCode ? `Short code / ${report.shortCode}` : 'Understand when and how people use your short links.'}>
-        <button type="button" className="secondary-btn workspace-button" disabled={!report || exporting}
+        <button type="button" className="primary-btn workspace-button" disabled={!report || exporting}
           onClick={() => void download()}><Icon name="download" />{exporting ? 'Preparing CSV…' : 'Export CSV'}</button>
       </PageHeader>
       <form className="dashboard-panel workspace-card analytics-filters" onSubmit={applyFilters} aria-label="Analytics filters"
@@ -139,9 +120,11 @@ function AnalyticsReport({ id }) {
       {!report && !error && <LoadingState>Loading analytics…</LoadingState>}
       {report && (
         <>
-          <h2 className="analytics-section-title">Selected period</h2>
-          <p>{from} through {through} (UTC) · {report.range.traffic === 'all' ? 'All traffic' : report.range.traffic === 'bot' ? 'Bots only' : 'Human estimates'}</p>
-          <dl className="workspace-metric-grid">
+          <div className="bento-section-heading">
+            <h2>Selected period</h2>
+            <p>{from} through {through} (UTC) · {report.range.traffic === 'all' ? 'All traffic' : report.range.traffic === 'bot' ? 'Bots only' : 'Human estimates'}</p>
+          </div>
+          <dl className="bento-period-metrics" aria-label="Selected period metrics">
             <MetricCard icon="chart" label="Recorded clicks" value={counts.total} featured />
             <MetricCard icon="visitors" label="Estimated human clicks" value={counts.human} />
             <MetricCard icon="shield" label="Flagged bot clicks" value={counts.bot} />
@@ -152,26 +135,27 @@ function AnalyticsReport({ id }) {
               report.range.traffic === 'bot' ? 'Visitor estimates apply to non-bot traffic.' :
               `Estimate based on ${visitors.identifiedClicks.toLocaleString()} eligible clicks. Daily rotation, shared IPs, and changing networks affect the count.`}
           </p>
-          {counts.total === 0 ? <div className="dashboard-panel workspace-card">
+          {counts.total === 0 ? <div className="dashboard-panel workspace-card bento-empty-chart">
             <EmptyState icon="chart" title="No clicks match these filters"><p>Try a different date range or traffic filter.</p></EmptyState>
           </div> : (
             <>
-              <ClickTrend trends={report.trends} interval={report.range.interval} description="Recorded clicks for the selected report period" />
-              {!id && <TopLinks links={report.topLinks} description="Ranked by recorded clicks for the selected period." />}
-              <div className="analytics-grid">
-                {Object.entries(breakdownLabels).map(([key, label]) => (
-                  <Breakdown key={key} title={label} rows={report.breakdowns[key]} total={counts.total} />
-                ))}
+              <div className="bento-analytics-chart" data-top-links={!id || undefined}>
+                <ClickTrend trends={report.trends} interval={report.range.interval} description="Recorded clicks for the selected report period" />
+                {!id && <TopLinks links={report.topLinks} description="Ranked by recorded clicks for the selected period." />}
               </div>
+              <div className="bento-section-heading"><h2>Traffic breakdown</h2></div>
+              <BreakdownGrid breakdowns={report.breakdowns} total={counts.total} />
             </>
           )}
-          <h2 className="analytics-section-title">Lifetime counters</h2>
-          <p className="analytics-caption">All dates and traffic types. These counters outlive the 90-day event history and may differ from event totals.</p>
-          <dl className="workspace-metric-grid lifetime-metric-grid">
-            <MetricCard label="Lifetime clicks" value={report.lifetime.total} />
-            <MetricCard label="Lifetime estimated human clicks" value={report.lifetime.human} />
-            <MetricCard label="Lifetime flagged bot clicks" value={report.lifetime.bot} />
-          </dl>
+          <section className="dashboard-panel workspace-card bento-lifetime" aria-labelledby="lifetime-title">
+            <h2 id="lifetime-title">Lifetime counters</h2>
+            <p className="workspace-panel-caption">All dates and traffic types. These counters outlive the 90-day event history and may differ from event totals.</p>
+            <dl className="bento-lifetime-metrics">
+              <MetricCard label="Lifetime clicks" value={report.lifetime.total} />
+              <MetricCard label="Lifetime estimated human clicks" value={report.lifetime.human} />
+              <MetricCard label="Lifetime flagged bot clicks" value={report.lifetime.bot} />
+            </dl>
+          </section>
         </>
       )}
     </section>
