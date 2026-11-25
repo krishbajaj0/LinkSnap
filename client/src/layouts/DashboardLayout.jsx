@@ -26,7 +26,6 @@ function DashboardShell() {
   const navigation = user?.role === 'admin'
     ? [...links, { to: '/dashboard/moderation', label: 'Moderation', icon: 'shield', end: true }]
     : links;
-  const initials = Array.from(user?.name?.trim() || user?.email || 'L')[0].toUpperCase();
 
   async function signOut() {
     if (signingOut) return;
@@ -54,10 +53,10 @@ function DashboardShell() {
         <header className="dashboard-header">
           <Brand />
           <button ref={menuToggle} className="dashboard-menu-toggle" type="button"
-            aria-label="Toggle dashboard navigation" aria-controls="dashboard-sidebar" aria-expanded={menuOpen}
+            aria-label="Dashboard menu" aria-controls="dashboard-sidebar" aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}><Icon name="menu" /> Menu</button>
-          <ActionDisclosure className="workspace-account" label={`Account menu${user?.name ? `, ${user.name}` : ''}`} trigger={
-            <><span className="workspace-avatar" aria-hidden="true">{initials}</span>
+          <ActionDisclosure className="workspace-account" label={`${user?.name ?? 'User'} account menu`} trigger={
+            <><span className="workspace-avatar" aria-hidden="true"><Icon name="visitors" size={16} /></span>
               <span className="workspace-account-name">{user?.name}</span><Icon name="chevron" size={15} /></>
           }>
             <div className="workspace-account-details"><strong>{user?.name}</strong><small>{user?.email}</small></div>
